@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.log.LogLag;
 import org.nuxeo.lib.stream.log.LogPartition;
 import org.nuxeo.lib.stream.log.LogTailer;
@@ -104,7 +105,7 @@ public class ChronicleLogManager extends AbstractLogManager {
 
     @Override
     public void create(String name, int size) {
-        ChronicleLogAppender.create(basePath.resolve(name).toFile(), size, retention).close();
+        ChronicleLogAppender.create(null, basePath.resolve(name).toFile(), size, retention).close();
     }
 
     @Override
@@ -186,18 +187,18 @@ public class ChronicleLogManager extends AbstractLogManager {
     }
 
     @Override
-    public <M extends Externalizable> CloseableLogAppender<M> createAppender(String name) {
-        return ChronicleLogAppender.open(basePath.resolve(name).toFile(), retention);
+    public <M extends Externalizable> CloseableLogAppender<M> createAppender(String name, Codec<M> codec) {
+        return ChronicleLogAppender.open(codec, basePath.resolve(name).toFile(), retention);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected <M extends Externalizable> LogTailer<M> doCreateTailer(Collection<LogPartition> partitions,
-            String group) {
+    protected <M extends Externalizable> LogTailer<M> doCreateTailer(Collection<LogPartition> partitions, String group,
+            Codec<M> codec) {
         Collection<ChronicleLogTailer<M>> pTailers = new ArrayList<>(partitions.size());
         partitions.forEach(partition -> pTailers.add(
                 (ChronicleLogTailer<M>) ((ChronicleLogAppender<M>) getAppender(partition.name())).createTailer(
-                        partition, group)));
+                        partition, group, codec)));
         if (pTailers.size() == 1) {
             return pTailers.iterator().next();
         }
@@ -206,7 +207,7 @@ public class ChronicleLogManager extends AbstractLogManager {
 
     @Override
     protected <M extends Externalizable> LogTailer<M> doSubscribe(String group, Collection<String> names,
-            RebalanceListener listener) {
+            RebalanceListener listener, Codec<M> codec) {
         throw new UnsupportedOperationException("subscribe is not supported by Chronicle implementation");
 
     }

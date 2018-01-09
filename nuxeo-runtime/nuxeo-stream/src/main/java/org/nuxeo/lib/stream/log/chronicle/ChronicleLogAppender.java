@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.log.LogOffset;
 import org.nuxeo.lib.stream.log.LogPartition;
 import org.nuxeo.lib.stream.log.LogTailer;
@@ -70,9 +71,11 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
 
     protected final ChronicleRetentionDuration retention;
 
+    protected final Codec<M> codec;
+
     protected volatile boolean closed;
 
-    protected ChronicleLogAppender(File basePath, int size, ChronicleRetentionDuration retention) {
+    protected ChronicleLogAppender(Codec<M> codec, File basePath, int size, ChronicleRetentionDuration retention) {
         if (size == 0) {
             // open
             if (!exists(basePath)) {
@@ -94,6 +97,7 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
             }
             this.nbPartitions = size;
         }
+        this.codec = codec;
         this.name = basePath.getName();
         this.basePath = basePath;
         this.retention = retention;
@@ -135,31 +139,31 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
     /**
      * Create a new log
      */
-    public static <M extends Externalizable> ChronicleLogAppender<M> create(File basePath, int size,
+    public static <M extends Externalizable> ChronicleLogAppender<M> create(Codec<M> codec, File basePath, int size,
             ChronicleRetentionDuration retention) {
-        return new ChronicleLogAppender<>(basePath, size, retention);
+        return new ChronicleLogAppender<>(codec, basePath, size, retention);
     }
 
     /**
      * Create a new log.
      */
-    public static <M extends Externalizable> ChronicleLogAppender<M> create(File basePath, int size) {
-        return new ChronicleLogAppender<>(basePath, size, ChronicleRetentionDuration.DISABLE);
+    public static <M extends Externalizable> ChronicleLogAppender<M> create(Codec<M> codec, File basePath, int size) {
+        return new ChronicleLogAppender<>(codec, basePath, size, ChronicleRetentionDuration.DISABLE);
     }
 
     /**
      * Open an existing log.
      */
-    public static <M extends Externalizable> ChronicleLogAppender<M> open(File basePath) {
-        return new ChronicleLogAppender<>(basePath, 0, ChronicleRetentionDuration.DISABLE);
+    public static <M extends Externalizable> ChronicleLogAppender<M> open(Codec<M> codec, File basePath) {
+        return new ChronicleLogAppender<>(codec, basePath, 0, ChronicleRetentionDuration.DISABLE);
     }
 
     /**
      * Open an existing log.
      */
-    public static <M extends Externalizable> ChronicleLogAppender<M> open(File basePath,
+    public static <M extends Externalizable> ChronicleLogAppender<M> open(Codec<M> codec, File basePath,
             ChronicleRetentionDuration retention) {
-        return new ChronicleLogAppender<>(basePath, 0, retention);
+        return new ChronicleLogAppender<>(codec, basePath, 0, retention);
     }
 
     public String getBasePath() {
@@ -179,7 +183,12 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
     @Override
     public LogOffset append(int partition, M message) {
         ExcerptAppender appender = partitions.get(partition).acquireAppender();
-        appender.writeDocument(w -> w.write("msg").object(message));
+        if (codec != null) {
+            appender.writeDocument(w -> w.write().bytes(codec.encode(message)));
+        } else {
+            // default format
+            appender.writeDocument(w -> w.write("msg").object(message));
+        }
         long offset = appender.lastIndexAppended();
         LogOffset ret = new LogOffsetImpl(name, partition, offset);
         if (log.isDebugEnabled()) {
@@ -188,8 +197,8 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
         return ret;
     }
 
-    public LogTailer<M> createTailer(LogPartition partition, String group) {
-        return addTailer(new ChronicleLogTailer<>(basePath.toString(),
+    public LogTailer<M> createTailer(LogPartition partition, String group, Codec<M> codec) {
+        return addTailer(new ChronicleLogTailer<>(codec, basePath.toString(),
                 partitions.get(partition.partition()).createTailer(), partition, group, retention));
     }
 

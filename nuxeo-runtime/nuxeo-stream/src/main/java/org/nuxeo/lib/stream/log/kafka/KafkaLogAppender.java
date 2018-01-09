@@ -18,11 +18,7 @@
  */
 package org.nuxeo.lib.stream.log.kafka;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Objects;
@@ -40,6 +36,8 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.utils.Bytes;
+import org.nuxeo.lib.stream.codec.Codec;
+import org.nuxeo.lib.stream.codec.SerializableCodec;
 import org.nuxeo.lib.stream.log.LogOffset;
 import org.nuxeo.lib.stream.log.internals.CloseableLogAppender;
 import org.nuxeo.lib.stream.log.internals.LogOffsetImpl;
@@ -67,14 +65,27 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
 
     protected final KafkaNamespace ns;
 
+    protected final Codec<M> codec;
+
     protected KafkaProducer<String, Bytes> producer;
 
     protected boolean closed;
 
+<<<<<<< fb1d9d00148818be69325582ac32ac7ece826c64
     private KafkaLogAppender(KafkaNamespace ns, String name, Properties producerProperties, Properties consumerProperties) {
         this.ns = ns;
         this.topic = ns.getTopicName(name);
+=======
+    private KafkaLogAppender(Codec<M> codec, String topic, String name, Properties producerProperties,
+            Properties consumerProperties) {
+        this.topic = topic;
+>>>>>>> NXP-22597: Add codec param on getAppender and creteTailer methods, keep default encoding when codec is null for backward compat
         this.name = name;
+        if (codec != null) {
+            this.codec = codec;
+        } else {
+            this.codec = new SerializableCodec<>();
+        }
         this.producerProps = producerProperties;
         this.consumerProps = consumerProperties;
         this.producer = new KafkaProducer<>(this.producerProps);
@@ -84,9 +95,15 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
         }
     }
 
+<<<<<<< fb1d9d00148818be69325582ac32ac7ece826c64
     public static <M extends Externalizable> KafkaLogAppender<M> open(KafkaNamespace ns, String name,
             Properties producerProperties, Properties consumerProperties) {
         return new KafkaLogAppender<>(ns, name, producerProperties, consumerProperties);
+=======
+    public static <M extends Externalizable> KafkaLogAppender<M> open(Codec<M> codec, String topic, String name,
+            Properties producerProperties, Properties consumerProperties) {
+        return new KafkaLogAppender<>(codec, topic, name, producerProperties, consumerProperties);
+>>>>>>> NXP-22597: Add codec param on getAppender and creteTailer methods, keep default encoding when codec is null for backward compat
     }
 
     @Override
@@ -104,6 +121,7 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
     }
 
     @Override
+<<<<<<< fb1d9d00148818be69325582ac32ac7ece826c64
     public LogOffset append(String key, M message) {
         Objects.requireNonNull(key);
         int partition = (key.hashCode() & 0x7fffffff) % size;
@@ -112,6 +130,10 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
 
     @Override
     public LogOffset append(int partition, Externalizable message) {
+=======
+    public LogOffset append(int partition, M message) {
+        Bytes value = Bytes.wrap(codec.encode(message));
+>>>>>>> NXP-22597: Add codec param on getAppender and creteTailer methods, keep default encoding when codec is null for backward compat
         String key = String.valueOf(partition);
         return append(partition, key, message);
     }
@@ -136,18 +158,6 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
                     len, key, message));
         }
         return ret;
-    }
-
-    protected byte[] messageAsByteArray(Externalizable message) {
-        ObjectOutput out;
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            out = new ObjectOutputStream(bos);
-            out.writeObject(message);
-            out.flush();
-            return bos.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override

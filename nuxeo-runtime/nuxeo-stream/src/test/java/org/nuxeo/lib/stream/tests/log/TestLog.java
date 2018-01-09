@@ -43,6 +43,11 @@ import org.junit.rules.TestName;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Watermark;
 import org.nuxeo.lib.stream.log.Latency;
+import org.nuxeo.lib.stream.codec.AvroBinaryCodec;
+import org.nuxeo.lib.stream.codec.AvroJsonCodec;
+import org.nuxeo.lib.stream.codec.AvroMessageCodec;
+import org.nuxeo.lib.stream.codec.Codec;
+import org.nuxeo.lib.stream.codec.SerializableCodec;
 import org.nuxeo.lib.stream.log.LogAppender;
 import org.nuxeo.lib.stream.log.LogLag;
 import org.nuxeo.lib.stream.log.LogManager;
@@ -52,6 +57,7 @@ import org.nuxeo.lib.stream.log.LogRecord;
 import org.nuxeo.lib.stream.log.LogTailer;
 import org.nuxeo.lib.stream.log.RebalanceException;
 import org.nuxeo.lib.stream.tests.KeyValueMessage;
+import sun.font.TrueTypeFont;
 
 public abstract class TestLog {
     protected static final Log log = LogFactory.getLog(TestLog.class);
@@ -789,6 +795,76 @@ public abstract class TestLog {
 
     protected Record createRecord(String key) throws UnsupportedEncodingException {
         return Record.of(key, ("value" + key).getBytes("UTF-8"));
+    }
+
+    @Test
+    public void testNoCodec() throws Exception {
+        testCodec(null);
+    }
+
+    @Test
+    public void testSerializableCodec() throws Exception {
+        Codec<KeyValueMessage> codec = new SerializableCodec<>();
+        testCodec(codec);
+    }
+
+    @Test
+    public void testAvroBinaryCodec() throws Exception {
+        Codec<KeyValueMessage> codec = new AvroBinaryCodec<>(KeyValueMessage.class);
+        testCodec(codec);
+    }
+
+    @Test
+    public void testAvroJsonCodec() throws Exception {
+        Codec<KeyValueMessage> codec = new AvroJsonCodec<>(KeyValueMessage.class);
+        testCodec(codec);
+    }
+
+    @Test
+    public void testAvroMessageCodec() throws Exception {
+        Codec<KeyValueMessage> codec = new AvroMessageCodec<>(KeyValueMessage.class);
+        testCodec(codec);
+    }
+
+    protected void testCodec(Codec<KeyValueMessage> codec) throws Exception {
+        final int LOG_SIZE = 1;
+        final String GROUP = "defaultTest";
+        manager.createIfNotExists(logName, LOG_SIZE);
+
+        LogAppender<KeyValueMessage> appender = manager.getAppender(logName, codec);
+        KeyValueMessage msg1 = KeyValueMessage.ofForceBatch("key", "value".getBytes("UTF-8"));
+        KeyValueMessage msg2 = KeyValueMessage.of("id2", "foo".getBytes("UTF-8"));
+        KeyValueMessage msg3 = KeyValueMessage.of("1234567890", "0987654321".getBytes("UTF-8"));
+        appender.append(0, msg1);
+        appender.append(0, msg2);
+        appender.append(0, msg3);
+        appender.append(0, msg1);
+
+        try (LogTailer<KeyValueMessage> tailer1 = manager.createTailer(GROUP, LogPartition.of(logName, 0), codec)) {
+            assertEquals(msg1, tailer1.read(DEF_TIMEOUT).message());
+            assertEquals(msg2, tailer1.read(DEF_TIMEOUT).message());
+            assertEquals(msg3, tailer1.read(DEF_TIMEOUT).message());
+            assertEquals(msg1, tailer1.read(DEF_TIMEOUT).message());
+            assertEquals(null, tailer1.read(SMALL_TIMEOUT));
+        }
+    }
+
+    @Test
+    public void testMixingCodec() throws Exception {
+        final int LOG_SIZE = 1;
+        final String GROUP = "defaultTest";
+        manager.createIfNotExists(logName, LOG_SIZE);
+        KeyValueMessage msg1 = KeyValueMessage.of("1234567890", "0987654321".getBytes("UTF-8"));
+
+        Codec<KeyValueMessage> codecWrite = new SerializableCodec<>();
+        Codec<KeyValueMessage> codecRead = new AvroBinaryCodec<>(KeyValueMessage.class);
+        LogAppender<KeyValueMessage> appender = manager.getAppender(logName, codecWrite);
+        appender.append(0, msg1);
+
+        try (LogTailer<KeyValueMessage> tailer = manager.createTailer(GROUP, LogPartition.of(logName, 0), codecRead)) {
+            assertEquals(msg1, tailer.read(DEF_TIMEOUT).message());
+            assertEquals(null, tailer.read(SMALL_TIMEOUT));
+        }
     }
 
     protected String readKey(LogTailer<KeyValueMessage> tailer) throws InterruptedException {

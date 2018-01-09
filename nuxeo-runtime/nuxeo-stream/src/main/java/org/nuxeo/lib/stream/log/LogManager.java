@@ -26,6 +26,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.nuxeo.lib.stream.codec.Codec;
+
 /**
  * Manage Log and give access to Appenders and Tailers. Closing the LogManager will also close all its appenders and
  * tailers.
@@ -51,21 +53,42 @@ public interface LogManager extends AutoCloseable {
     boolean delete(String name);
 
     /**
-     * Get an appender for the Log named {@code name}. An appender is thread safe.
+     * Get an appender for the Log named {@code name}, use {@code codec} to encode records. An appender is thread safe.
+     *
+     * @since 10.1
      */
-    <M extends Externalizable> LogAppender<M> getAppender(String name);
+    <M extends Externalizable> LogAppender<M> getAppender(String name, Codec<M> codec);
+
+    /**
+     * Get an appender for the Log named {@code name}. Encode message using Java Externalizable API. An appender is
+     * thread safe.
+     */
+    default <M extends Externalizable> LogAppender<M> getAppender(String name) {
+        return getAppender(name, null);
+    }
 
     /**
      * Create a tailer for a consumer {@code group} and assign multiple {@code partitions}. Note that {@code partitions}
-     * can be from different Logs. A tailer is NOT thread safe.
+     * can be from different Logs. Use a {@code codec} to decode records. A tailer is NOT thread safe.
+     *
+     * @since 10.1
      */
-    <M extends Externalizable> LogTailer<M> createTailer(String group, Collection<LogPartition> partitions);
+    <M extends Externalizable> LogTailer<M> createTailer(String group, Collection<LogPartition> partitions,
+            Codec<M> codec);
+
+    /**
+     * Create a tailer for a consumer {@code group} and assign multiple {@code partitions}. Note that {@code partitions}
+     * can be from different Logs. Decode message using the Java Externalizable API. A tailer is NOT thread safe.
+     */
+    default <M extends Externalizable> LogTailer<M> createTailer(String group, Collection<LogPartition> partitions) {
+        return createTailer(group, partitions, null);
+    }
 
     /**
      * Create a tailer for a consumer {@code group} and assign a single {@code partition}. A tailer is NOT thread safe.
      */
     default <M extends Externalizable> LogTailer<M> createTailer(String group, LogPartition partition) {
-        return createTailer(group, Collections.singletonList(partition));
+        return createTailer(group, partition, null);
     }
 
     /**
@@ -73,10 +96,30 @@ public interface LogManager extends AutoCloseable {
      * safe.
      */
     default <M extends Externalizable> LogTailer<M> createTailer(String group, String name) {
+        return createTailer(group, name, null);
+    }
+
+    /**
+     * Create a tailer for a consumer {@code group} and assign a single {@code partition}. A tailer is NOT thread safe.
+     *
+     * @since 10.1
+     */
+    default <M extends Externalizable> LogTailer<M> createTailer(String group, LogPartition partition, Codec<M> codec) {
+        return createTailer(group, Collections.singletonList(partition), codec);
+    }
+
+    /**
+     * Create a tailer for a consumer {@code group} and assign all {@code partitions} of the Log. A tailer is NOT thread
+     * safe.
+     *
+     * @since 10.1
+     */
+    default <M extends Externalizable> LogTailer<M> createTailer(String group, String name, Codec<M> codec) {
         int size = getAppender(name).size();
         return createTailer(group,
                 IntStream.range(0, size).boxed().map(partition -> new LogPartition(name, partition)).collect(
-                        Collectors.toList()));
+                        Collectors.toList()),
+                codec);
     }
 
     /**
@@ -94,7 +137,12 @@ public interface LogManager extends AutoCloseable {
      * You should not mix {@link #createTailer} and {@code subscribe} usage using the same {@code group}.
      */
     <M extends Externalizable> LogTailer<M> subscribe(String group, Collection<String> names,
-            RebalanceListener listener);
+            RebalanceListener listener, Codec<M> codec);
+
+    default <M extends Externalizable> LogTailer<M> subscribe(String group, Collection<String> names,
+            RebalanceListener listener) {
+        return subscribe(group, names, listener, null);
+    }
 
     /**
      * Returns the lag between consumer {@code group} and the producers for each partition. The result list is ordered,

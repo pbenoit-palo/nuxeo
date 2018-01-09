@@ -29,8 +29,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-
 import org.nuxeo.lib.stream.log.Latency;
+import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.log.LogAppender;
 import org.nuxeo.lib.stream.log.LogLag;
 import org.nuxeo.lib.stream.log.LogManager;
@@ -50,13 +50,13 @@ public abstract class AbstractLogManager implements LogManager {
 
     protected abstract void create(String name, int size);
 
-    protected abstract <M extends Externalizable> CloseableLogAppender<M> createAppender(String name);
+    protected abstract <M extends Externalizable> CloseableLogAppender<M> createAppender(String name, Codec<M> codec);
 
     protected abstract <M extends Externalizable> LogTailer<M> doCreateTailer(Collection<LogPartition> partitions,
-            String group);
+            String group, Codec<M> codec);
 
     protected abstract <M extends Externalizable> LogTailer<M> doSubscribe(String group, Collection<String> names,
-            RebalanceListener listener);
+            RebalanceListener listener, Codec<M> codec);
 
     @Override
     public synchronized boolean createIfNotExists(String name, int size) {
@@ -73,9 +73,10 @@ public abstract class AbstractLogManager implements LogManager {
     }
 
     @Override
-    public <M extends Externalizable> LogTailer<M> createTailer(String group, Collection<LogPartition> partitions) {
+    public <M extends Externalizable> LogTailer<M> createTailer(String group, Collection<LogPartition> partitions,
+            Codec<M> codec) {
         partitions.forEach(partition -> checkInvalidAssignment(group, partition));
-        LogTailer<M> ret = doCreateTailer(partitions, group);
+        LogTailer<M> ret = doCreateTailer(partitions, group, codec);
         partitions.forEach(partition -> tailersAssignments.put(new LogPartitionGroup(group, partition), ret));
         tailers.add(ret);
         return ret;
@@ -88,8 +89,8 @@ public abstract class AbstractLogManager implements LogManager {
 
     @Override
     public <M extends Externalizable> LogTailer<M> subscribe(String group, Collection<String> names,
-            RebalanceListener listener) {
-        LogTailer<M> ret = doSubscribe(group, names, listener);
+            RebalanceListener listener, Codec<M> codec) {
+        LogTailer<M> ret = doSubscribe(group, names, listener, codec);
         tailers.add(ret);
         return ret;
     }
@@ -108,10 +109,10 @@ public abstract class AbstractLogManager implements LogManager {
 
     @SuppressWarnings("unchecked")
     @Override
-    public synchronized <M extends Externalizable> LogAppender<M> getAppender(String name) {
+    public synchronized <M extends Externalizable> LogAppender<M> getAppender(String name, Codec<M> codec) {
         return (LogAppender<M>) appenders.computeIfAbsent(name, n -> {
             if (exists(n)) {
-                return createAppender(n);
+                return createAppender(n, codec);
             }
             throw new IllegalArgumentException("unknown Log name: " + n);
         });

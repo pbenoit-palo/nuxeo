@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.log.LogOffset;
 import org.nuxeo.lib.stream.log.LogPartition;
 import org.nuxeo.lib.stream.log.LogRecord;
@@ -61,11 +62,14 @@ public class ChronicleLogTailer<M extends Externalizable> implements LogTailer<M
 
     protected final LogPartition partition;
 
+    protected final Codec<M> codec;
+
     protected volatile boolean closed = false;
 
-    public ChronicleLogTailer(String basePath, ExcerptTailer cqTailer, LogPartition partition, String group,
-            ChronicleRetentionDuration retention) {
+    public ChronicleLogTailer(Codec<M> codec, String basePath, ExcerptTailer cqTailer, LogPartition partition,
+            String group, ChronicleRetentionDuration retention) {
         Objects.requireNonNull(group);
+        this.codec = codec;
         this.basePath = basePath;
         this.cqTailer = cqTailer;
         this.partition = partition;
@@ -108,8 +112,15 @@ public class ChronicleLogTailer<M extends Externalizable> implements LogTailer<M
         }
         List<M> value = new ArrayList<>(1);
         long offset = cqTailer.index();
-        if (!cqTailer.readDocument(w -> value.add((M) w.read("msg").object()))) {
-            return null;
+        if (codec != null) {
+            if (!cqTailer.readDocument(w -> value.add(codec.decode(w.read().bytes())))) {
+                return null;
+            }
+        } else {
+            // default format to keep backward compatibility
+            if (!cqTailer.readDocument(w -> value.add((M) w.read("msg").object()))) {
+                return null;
+            }
         }
         return new LogRecord<>(value.get(0), new LogOffsetImpl(partition, offset));
     }
