@@ -267,7 +267,7 @@ public class ComputationRunner implements Runnable, RebalanceListener {
             record = logRecord.message();
             lastReadTime = System.currentTimeMillis();
             inRecords++;
-            lowWatermark.mark(record.watermark);
+            lowWatermark.mark(record.getWatermark());
             String from = metadata.reverseMap(logRecord.offset().partition().name());
             // System.out.println(metadata.name() + ": Receive from " + from + " record: " + record);
             computation.processRecord(context, from, record);
@@ -295,11 +295,11 @@ public class ComputationRunner implements Runnable, RebalanceListener {
     }
 
     protected void checkRecordFlags(Record record) {
-        if (record.flags.contains(Record.Flag.POISON_PILL)) {
+        if (record.getFlags().contains(Record.Flag.POISON_PILL)) {
             log.info(metadata.name() + ": Receive POISON PILL");
             context.askForCheckpoint();
             stop = true;
-        } else if (record.flags.contains(Record.Flag.COMMIT)) {
+        } else if (record.getFlags().contains(Record.Flag.COMMIT)) {
             context.askForCheckpoint();
         }
     }
@@ -357,11 +357,11 @@ public class ComputationRunner implements Runnable, RebalanceListener {
             LogAppender<Record> appender = logManager.getAppender(stream);
             for (Record record : context.getRecords(stream)) {
                 // System.out.println(metadata.name() + " send record to " + stream + " lowWatermark " + lowWatermark);
-                if (record.watermark == 0) {
+                if (record.getWatermark() == 0) {
                     // use low watermark when not set
-                    record.watermark = lowWatermark.getLow().getValue();
+                    record.setWatermark(lowWatermark.getLow().getValue());
                 }
-                appender.append(record.key, record);
+                appender.append(record.getKey(), record);
                 outRecords++;
             }
             context.getRecords(stream).clear();

@@ -384,7 +384,7 @@ public abstract class TestStreamProcessor {
         tailer.toStart();
         for (LogRecord<Record> logRecord = tailer.read(
                 Duration.ofMillis(1000)); logRecord != null; logRecord = tailer.read(Duration.ofMillis(500))) {
-            result += Integer.valueOf(logRecord.message().key);
+            result += Integer.valueOf(logRecord.message().getKey());
         }
         tailer.commit();
         return result;

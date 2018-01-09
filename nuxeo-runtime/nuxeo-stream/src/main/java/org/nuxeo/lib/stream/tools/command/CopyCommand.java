@@ -91,7 +91,7 @@ public class CopyCommand extends Command {
                 if (record == null) {
                     break;
                 }
-                appender.append(record.message().key, record.message());
+                appender.append(record.message().getKey(), record.message());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

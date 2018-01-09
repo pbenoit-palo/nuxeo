@@ -114,7 +114,7 @@ public class ComputationSource extends AbstractComputation {
             // should never happen
             throw new RuntimeException(e);
         }
-        ret.watermark = getWatermark();
+        ret.setWatermark(getWatermark());
         return ret;
     }
 }

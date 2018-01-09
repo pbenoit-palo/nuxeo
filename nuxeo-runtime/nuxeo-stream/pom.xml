@@ -58,6 +58,9 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
     </dependency>
+      <groupId>org.apache.avro</groupId>
+      <artifactId>avro</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
@@ -71,7 +74,7 @@
           <showDeprecation>true</showDeprecation>
         </configuration>
       </plugin>
-    </plugins>
+   </plugins>
   </build>
 
 </project>
