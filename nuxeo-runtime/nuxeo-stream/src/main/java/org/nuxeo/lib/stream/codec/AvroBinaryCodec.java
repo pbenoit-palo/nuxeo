@@ -41,7 +41,6 @@ public class AvroBinaryCodec<T> implements Codec<T> {
 
     public AvroBinaryCodec(Class<T> messageClass) {
         this.messageClass = messageClass;
-        // TODO: check if class impl an interface that returns an explicit schema
         schema = ReflectData.get().getSchema(messageClass);
         encoder = new RawMessageEncoder<>(ReflectData.get(), schema);
         decoder = new RawMessageDecoder<>(ReflectData.get(), schema);

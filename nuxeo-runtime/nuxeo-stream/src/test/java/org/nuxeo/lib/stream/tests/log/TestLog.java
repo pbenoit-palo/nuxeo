@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.avro.AvroRuntimeException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.After;
@@ -862,8 +863,12 @@ public abstract class TestLog {
         appender.append(0, msg1);
 
         try (LogTailer<KeyValueMessage> tailer = manager.createTailer(GROUP, LogPartition.of(logName, 0), codecRead)) {
-            assertEquals(msg1, tailer.read(DEF_TIMEOUT).message());
-            assertEquals(null, tailer.read(SMALL_TIMEOUT));
+            try {
+                tailer.read(DEF_TIMEOUT);
+                fail("Try to read with a different codec should fail");
+            } catch (AvroRuntimeException e) {
+                // expected Decoding datum failed
+            }
         }
     }
 

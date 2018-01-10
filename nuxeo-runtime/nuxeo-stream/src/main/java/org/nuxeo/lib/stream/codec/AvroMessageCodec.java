@@ -45,7 +45,6 @@ public class AvroMessageCodec<T> implements Codec<T> {
 
     public AvroMessageCodec(Class<T> messageClass, SchemaStore store) {
         this.messageClass = messageClass;
-        // TODO: check if class impl an interface that returns an explicit schema
         schema = ReflectData.get().getSchema(messageClass);
         encoder = new BinaryMessageEncoder<>(ReflectData.get(), schema);
         decoder = new BinaryMessageDecoder<>(ReflectData.get(), schema, store);

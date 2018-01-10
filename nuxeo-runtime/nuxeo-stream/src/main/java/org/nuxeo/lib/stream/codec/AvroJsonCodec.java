@@ -47,7 +47,6 @@ public class AvroJsonCodec<T> implements Codec<T> {
 
     public AvroJsonCodec(Class<T> messageClass) {
         this.messageClass = messageClass;
-        // TODO: check if class impl an interface that returns an explicit schema
         schema = ReflectData.get().getSchema(messageClass);
         writer = new ReflectDatumWriter<>(schema);
         reader = new ReflectDatumReader<>(schema);
