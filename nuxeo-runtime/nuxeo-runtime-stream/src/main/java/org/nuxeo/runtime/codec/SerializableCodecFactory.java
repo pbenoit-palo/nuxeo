@@ -18,13 +18,23 @@
  */
 package org.nuxeo.runtime.codec;
 
+import java.util.Map;
+
 import org.nuxeo.lib.stream.codec.Codec;
+import org.nuxeo.lib.stream.codec.SerializableCodec;
 
 /**
  * @since 10.1
  */
-public interface CodecService {
+public class SerializableCodecFactory implements CodecFactory {
 
-    <T> Codec<T> getCodec(String codecName, Class<T> objectClass);
+    @Override
+    public void init(Map<String, String> options) {
 
+    }
+
+    @Override
+    public <T> Codec<T> getCodec(Class<T> objectClass) {
+        return new SerializableCodec();
+    }
 }

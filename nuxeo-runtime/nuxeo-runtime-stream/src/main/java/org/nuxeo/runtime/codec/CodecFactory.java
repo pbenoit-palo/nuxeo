@@ -20,11 +20,14 @@ package org.nuxeo.runtime.codec;
 
 import org.nuxeo.lib.stream.codec.Codec;
 
+import java.util.Map;
+
 /**
  * @since 10.1
  */
-public interface CodecService {
+public interface CodecFactory {
 
-    <T> Codec<T> getCodec(String codecName, Class<T> objectClass);
+    void init(Map<String, String> options);
 
+    <T> Codec<T> getCodec(Class<T> objectClass);
 }

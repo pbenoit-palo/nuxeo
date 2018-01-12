@@ -37,7 +37,8 @@ public class CodecServiceImpl extends DefaultComponent implements CodecService {
     private static final Log log = LogFactory.getLog(CodecServiceImpl.class);
 
     protected final Map<String, CodecDescriptor> configs = new HashMap<>();
-    protected final Map<Class, Codec> codecs = new HashMap<>();
+
+    protected final Map<String, CodecFactory> codecs = new HashMap<>();
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
@@ -45,7 +46,7 @@ public class CodecServiceImpl extends DefaultComponent implements CodecService {
             CodecDescriptor descriptor = (CodecDescriptor) contribution;
             configs.put(descriptor.getName(), descriptor);
             log.debug(String.format("Register Codec contribution: %s", descriptor));
-            codecs.put(descriptor.getClass(), descriptor.getInstance());
+            codecs.put(descriptor.getName(), descriptor.getInstance());
         }
     }
 
@@ -67,7 +68,10 @@ public class CodecServiceImpl extends DefaultComponent implements CodecService {
     }
 
     @Override
-    public <T> Codec<T> getCodec(Class<T> objectClass) {
-        return null;
+    public <T> Codec<T> getCodec(String codecName, Class<T> objectClass) {
+        if (! codecs.containsKey(codecName)) {
+            return null;
+        }
+        return codecs.get(codecName).getCodec(objectClass);
     }
 }

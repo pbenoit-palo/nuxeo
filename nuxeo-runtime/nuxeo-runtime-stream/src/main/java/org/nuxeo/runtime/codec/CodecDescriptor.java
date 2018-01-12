@@ -19,23 +19,22 @@
  */
 package org.nuxeo.runtime.codec;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XNodeMap;
 import org.nuxeo.common.xmap.annotation.XObject;
-import org.nuxeo.lib.stream.codec.Codec;
 
 @SuppressWarnings("CanBeFinal")
 @XObject("codec")
 public class CodecDescriptor {
+
     @XNode("@name")
     protected String name;
 
     @XNode("@class")
-    protected Class<Codec> klass;
+    protected Class<CodecFactory> klass;
 
     @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
     public Map<String, String> options = new HashMap<>();
@@ -44,16 +43,8 @@ public class CodecDescriptor {
         return name;
     }
 
-    public Class<Codec> getKlass() {
+    public Class<CodecFactory> getKlass() {
         return klass;
-    }
-
-    public String getOption(String key) {
-        return options.get(key);
-    }
-
-    public String getOption(String key, String defaultValue) {
-        return options.getOrDefault(key, defaultValue);
     }
 
     @Override
@@ -61,9 +52,10 @@ public class CodecDescriptor {
         return "CodecDescriptor{" + "klass=" + klass + ", options=" + options + '}';
     }
 
-    public Codec getInstance() {
+    public CodecFactory getInstance() {
         try {
-            Codec ret = getKlass().getDeclaredConstructor().newInstance();
+            CodecFactory ret = getKlass().getDeclaredConstructor().newInstance();
+            ret.init(options);
             return ret;
         } catch (ReflectiveOperationException e) {
             throw new IllegalArgumentException("Invalid class: " + getClass(), e);
