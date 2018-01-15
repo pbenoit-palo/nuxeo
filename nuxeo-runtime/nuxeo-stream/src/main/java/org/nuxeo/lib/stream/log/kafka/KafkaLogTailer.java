@@ -73,6 +73,8 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
 
     protected final Codec<M> codec;
 
+    protected final Codec<M> decodeCodec;
+
     protected KafkaConsumer<String, Bytes> consumer;
 
     protected String id;
@@ -93,10 +95,11 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
     protected boolean consumerMoved;
 
     protected KafkaLogTailer(Codec<M> codec, KafkaNamespace ns, String group, Properties consumerProps) {
+        this.codec = codec;
         if (codec == null) {
-            this.codec = new SerializableCodec<>();
+            this.decodeCodec = new SerializableCodec<>();
         } else {
-            this.codec = codec;
+            this.decodeCodec = codec;
         }
         Objects.requireNonNull(group);
         this.ns = ns;
@@ -104,7 +107,6 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
         // this.prefixedGroup = group;
         consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, ns.getKafkaGroup(group));
         this.consumer = new KafkaConsumer<>(consumerProps);
-
     }
 
     public static <M extends Externalizable> KafkaLogTailer<M> createAndAssign(Codec<M> codec, KafkaNamespace ns,
@@ -164,7 +166,7 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
         }
         ConsumerRecord<String, Bytes> record = records.poll();
         lastOffsets.put(new TopicPartition(record.topic(), record.partition()), record.offset());
-        M value = codec.decode(record.value().get());
+        M value = decodeCodec.decode(record.value().get());
         LogPartition partition = LogPartition.of(ns.getLogName(record.topic()), record.partition());
         LogOffset offset = new LogOffsetImpl(partition, record.offset());
         consumerMoved = false;
@@ -255,7 +257,7 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
             consumer.seekToBeginning(Collections.singletonList(topicPartition));
             offset = consumer.position(topicPartition);
         }
-        lastCommittedOffsets.put(topicPartition,offset);
+        lastCommittedOffsets.put(topicPartition, offset);
         if (log.isDebugEnabled()) {
             log.debug(String.format(" toLastCommitted: %s-%02d:+%d", ns.getLogName(topicPartition.topic()),
                     topicPartition.partition(), offset));
@@ -330,9 +332,8 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
         if (log.isDebugEnabled()) {
             String msg = offsetToCommit.entrySet()
                                        .stream()
-                                       .map(entry -> String.format("%s-%02d:+%d",
-                                               ns.getLogName(entry.getKey().topic()), entry.getKey().partition(),
-                                               entry.getValue().offset()))
+                                       .map(entry -> String.format("%s-%02d:+%d", ns.getLogName(entry.getKey().topic()),
+                                               entry.getKey().partition(), entry.getValue().offset()))
                                        .collect(Collectors.joining("|"));
             log.debug("Committed offsets  " + group + ":" + msg);
         }
@@ -344,8 +345,8 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
     protected void forceCommit() {
         log.info("Force commit after a move");
 
-        Map<TopicPartition, OffsetAndMetadata> offsets =
-                topicPartitions.stream().collect(toMap(tp -> tp, tp -> new OffsetAndMetadata(consumer.position(tp))));
+        Map<TopicPartition, OffsetAndMetadata> offsets = topicPartitions.stream().collect(
+                toMap(tp -> tp, tp -> new OffsetAndMetadata(consumer.position(tp))));
         consumer.commitSync(offsets);
         offsets.forEach((topicPartition, offset) -> lastCommittedOffsets.put(topicPartition, offset.offset()));
         consumerMoved = false;
@@ -384,6 +385,11 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
     @Override
     public boolean closed() {
         return closed;
+    }
+
+    @Override
+    public Codec<M> getCodec() {
+        return codec;
     }
 
     @Override

@@ -55,7 +55,7 @@ public interface LogManager extends AutoCloseable {
     /**
      * Get an appender for the Log named {@code name}, use {@code codec} to encode records. An appender is thread safe.
      *
-     * @since 10.1
+     * @since 10.2
      */
     <M extends Externalizable> LogAppender<M> getAppender(String name, Codec<M> codec);
 
@@ -69,53 +69,55 @@ public interface LogManager extends AutoCloseable {
 
     /**
      * Create a tailer for a consumer {@code group} and assign multiple {@code partitions}. Note that {@code partitions}
-     * can be from different Logs. Use a {@code codec} to decode records. A tailer is NOT thread safe.
+     * can be from different Logs. Legacy codec used to decode records. A tailer is NOT thread safe.
      *
-     * @since 10.1
+     * @since 10.2
      */
     <M extends Externalizable> LogTailer<M> createTailer(String group, Collection<LogPartition> partitions,
             Codec<M> codec);
 
     /**
      * Create a tailer for a consumer {@code group} and assign multiple {@code partitions}. Note that {@code partitions}
-     * can be from different Logs. Decode message using the Java Externalizable API. A tailer is NOT thread safe.
+     * can be from different Logs. Legacy codec used to decode records. A tailer is NOT thread safe.
      */
     default <M extends Externalizable> LogTailer<M> createTailer(String group, Collection<LogPartition> partitions) {
         return createTailer(group, partitions, null);
     }
 
     /**
-     * Create a tailer for a consumer {@code group} and assign a single {@code partition}. A tailer is NOT thread safe.
+     * Create a tailer for a consumer {@code group} and assign a single {@code partition}. Legacy codec used to decode
+     * records. A tailer is NOT thread safe.
      */
     default <M extends Externalizable> LogTailer<M> createTailer(String group, LogPartition partition) {
         return createTailer(group, partition, null);
     }
 
     /**
-     * Create a tailer for a consumer {@code group} and assign all {@code partitions} of the Log. A tailer is NOT thread
-     * safe.
+     * Create a tailer for a consumer {@code group} and assign all {@code partitions} of the Log. Legacy codec used to
+     * decode records. A tailer is NOT thread safe.
      */
     default <M extends Externalizable> LogTailer<M> createTailer(String group, String name) {
         return createTailer(group, name, null);
     }
 
     /**
-     * Create a tailer for a consumer {@code group} and assign a single {@code partition}. A tailer is NOT thread safe.
+     * Create a tailer for a consumer {@code group} and assign a single {@code partition}. Use an explicit codec to
+     * decode records. A tailer is NOT thread safe.
      *
-     * @since 10.1
+     * @since 10.2
      */
     default <M extends Externalizable> LogTailer<M> createTailer(String group, LogPartition partition, Codec<M> codec) {
         return createTailer(group, Collections.singletonList(partition), codec);
     }
 
     /**
-     * Create a tailer for a consumer {@code group} and assign all {@code partitions} of the Log. A tailer is NOT thread
-     * safe.
+     * Create a tailer for a consumer {@code group} and assign all {@code partitions} of the Log. Use an explicit codec
+     * to decode records. A tailer is NOT thread safe.
      *
-     * @since 10.1
+     * @since 10.2
      */
     default <M extends Externalizable> LogTailer<M> createTailer(String group, String name, Codec<M> codec) {
-        int size = getAppender(name).size();
+        int size = getAppender(name, codec).size();
         return createTailer(group,
                 IntStream.range(0, size).boxed().map(partition -> new LogPartition(name, partition)).collect(
                         Collectors.toList()),
@@ -130,7 +132,8 @@ public interface LogManager extends AutoCloseable {
     /**
      * Create a tailer for a consumer {@code group} and subscribe to multiple Logs. The partitions assignment is done
      * dynamically depending on the number of subscribers. The partitions can change during tailers life, this is called
-     * a rebalancing. A listener can be used to be notified on assignment changes.
+     * a rebalancing. A listener can be used to be notified on assignment changes. Use an explicit codec to decode
+     * records.
      * <p/>
      * A tailer is NOT thread safe.
      * <p/>
@@ -163,10 +166,23 @@ public interface LogManager extends AutoCloseable {
      * <br/>
      * Two functions need to be provided to extract the timestamp and a key from a record.
      *
+     * @since 10.2
+     */
+    <M extends Externalizable> List<Latency> getLatencyPerPartition(String name, String group, Codec<M> codec,
+            Function<M, Long> timestampExtractor, Function<M, String> keyExtractor);
+
+    /**
+     * Returns the lag with latency. Timestamps used to compute the latencies are extracted from the records. This
+     * requires to read one record per partition so it costs more than {@link #getLagPerPartition(String, String)}.
+     * <br/>
+     * Two functions need to be provided to extract the timestamp and a key from a record.
+     *
      * @since 10.1
      */
-    <M extends Externalizable> List<Latency> getLatencyPerPartition(String name, String group,
-            Function<M, Long> timestampExtractor, Function<M, String> keyExtractor);
+    default <M extends Externalizable> List<Latency> getLatencyPerPartition(String name, String group,
+            Function<M, Long> timestampExtractor, Function<M, String> keyExtractor) {
+        return getLatencyPerPartition(name, group, null, timestampExtractor, keyExtractor);
+    }
 
     /**
      * Returns the latency between consumer {@code group} and producers for a Log.
@@ -175,7 +191,17 @@ public interface LogManager extends AutoCloseable {
      */
     default <M extends Externalizable> Latency getLatency(String name, String group,
             Function<M, Long> timestampExtractor, Function<M, String> keyExtractor) {
-        return Latency.of(getLatencyPerPartition(name, group, timestampExtractor, keyExtractor));
+        return getLatency(name, group, null, timestampExtractor, keyExtractor);
+    }
+
+    /**
+     * Returns the latency between consumer {@code group} and producers for a Log.
+     *
+     * @since 10.2
+     */
+    default <M extends Externalizable> Latency getLatency(String name, String group, Codec<M> codec,
+            Function<M, Long> timestampExtractor, Function<M, String> keyExtractor) {
+        return Latency.of(getLatencyPerPartition(name, group, codec, timestampExtractor, keyExtractor));
     }
 
     /**

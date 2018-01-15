@@ -21,7 +21,7 @@ package org.nuxeo.lib.stream.tests.codec;
 import java.util.Objects;
 
 /**
- * @since 10.1
+ * @since 10.2
  */
 public class MessageV1 {
     public int intValue = 1;

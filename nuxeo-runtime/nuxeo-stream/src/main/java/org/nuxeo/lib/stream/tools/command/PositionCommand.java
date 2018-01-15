@@ -222,7 +222,7 @@ public class PositionCommand extends Command {
     protected LogOffset searchWatermarkOffset(LogTailer<Record> tailer, long timestamp) throws InterruptedException {
         LogOffset lastOffset = null;
         for (LogRecord<Record> rec = tailer.read(FIRST_READ_TIMEOUT); rec != null; rec = tailer.read(READ_TIMEOUT)) {
-            long recTimestamp = Watermark.ofValue(rec.message().watermark).getTimestamp();
+            long recTimestamp = Watermark.ofValue(rec.message().getWatermark()).getTimestamp();
             if (recTimestamp == timestamp) {
                 return rec.offset();
             } else if (recTimestamp > timestamp) {

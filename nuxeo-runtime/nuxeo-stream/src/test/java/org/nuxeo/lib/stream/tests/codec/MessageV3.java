@@ -23,7 +23,7 @@ import java.util.Objects;
 import org.apache.avro.reflect.AvroName;
 
 /**
- * @since 10.1
+ * @since 10.2
  */
 public class MessageV3 {
     @AvroName("intValue")

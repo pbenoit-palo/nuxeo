@@ -24,10 +24,11 @@ import org.nuxeo.lib.stream.codec.AvroBinaryCodec;
 import org.nuxeo.lib.stream.codec.AvroJsonCodec;
 import org.nuxeo.lib.stream.codec.AvroMessageCodec;
 import org.nuxeo.lib.stream.codec.Codec;
-import org.nuxeo.lib.stream.codec.SerializableCodec;
 
 /**
- * @since 10.1
+ * Factory to generate Avro codec with different flavors
+ *
+ * @since 10.2
  */
 public class AvroCodecFactory implements CodecFactory {
 
@@ -41,14 +42,14 @@ public class AvroCodecFactory implements CodecFactory {
     @Override
     public <T> Codec<T> getCodec(Class<T> objectClass) {
         switch (encoding) {
-            case "json":
-                return new AvroJsonCodec<>(objectClass);
-            case "binary":
-                return new AvroBinaryCodec<>(objectClass);
-            case "message":
-            default:
-                // TODO: handle schema store
-                return new AvroMessageCodec<>(objectClass);
+        case "json":
+            return new AvroJsonCodec<>(objectClass);
+        case "binary":
+            return new AvroBinaryCodec<>(objectClass);
+        case "message":
+        default:
+            // TODO: handle schema store
+            return new AvroMessageCodec<>(objectClass);
         }
     }
 }

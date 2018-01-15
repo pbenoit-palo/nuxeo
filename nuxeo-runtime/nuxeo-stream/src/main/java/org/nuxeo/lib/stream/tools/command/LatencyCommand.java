@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Watermark;
 import org.nuxeo.lib.stream.log.Latency;
@@ -61,21 +62,25 @@ public class LatencyCommand extends Command {
         String name = cmd.getOptionValue("log-name");
         verbose = cmd.hasOption("verbose");
         if (name != null) {
-            latency(manager, name);
+            latency(manager, name, getCodec());
         } else {
             latency(manager);
         }
         return true;
     }
 
+    protected Codec<Record> getCodec() {
+        return null;
+    }
+
     protected void latency(LogManager manager) {
         System.out.println("# " + manager);
         for (String name : manager.listAll()) {
-            latency(manager, name);
+            latency(manager, name, getCodec());
         }
     }
 
-    protected void latency(LogManager manager, String name) {
+    protected void latency(LogManager manager, String name, Codec<Record> codec) {
         System.out.println("## Log: " + name + " partitions: " + manager.getAppender(name).size());
         List<String> consumers = manager.listConsumerGroups(name);
         if (verbose && consumers.isEmpty()) {
@@ -83,8 +88,8 @@ public class LatencyCommand extends Command {
             consumers.add("tools");
         }
         try {
-            consumers.forEach(group -> renderLatency(group, manager.<Record> getLatencyPerPartition(name, group,
-                    (rec -> Watermark.ofValue(rec.watermark).getTimestamp()), (rec -> rec.key))));
+            consumers.forEach(group -> renderLatency(group, manager.<Record> getLatencyPerPartition(name, group, codec,
+                    (rec -> Watermark.ofValue(rec.getWatermark()).getTimestamp()), (rec -> rec.getKey()))));
         } catch (IllegalStateException e) {
             // happen when this is not a stream of Record
             System.err.println(e.getMessage());

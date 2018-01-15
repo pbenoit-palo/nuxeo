@@ -38,76 +38,37 @@ import java.util.Objects;
  *
  * @since 9.3
  */
+@SuppressWarnings("deprecation")
 public class Record implements Externalizable {
     protected static final EnumSet<Flag> DEFAULT_FLAG = EnumSet.of(Flag.DEFAULT);
 
+    protected static final byte[] NO_DATA = new byte[0];
+
     // Externalizable do rely on serialVersionUID
-    static final long serialVersionUID = 20170529L;
+    static final long serialVersionUID = 2017_05_29L;
 
-    protected long watermark;
+    /** @deprecated 10.2 use {@link #getWatermark()} or {@link #setWatermark(long)} instead */
+    @Deprecated
+    public long watermark;
 
-    protected byte flags;
+    /** @deprecated 10.2 use {@link #getKey()} or {@link #setKey(String)} instead */
+    @Deprecated
+    public String key;
 
+    /** @deprecated 10.2 use {@link #getData()} or {@link #setData(byte[])} instead */
+    @Deprecated
+    // We can not use null because Nullable on byte[] requires avro 1.7.6 cf AVRO-1401
+    public byte[] data = NO_DATA;
+
+    /** @deprecated 10.2 use {@link #getFlags()} or {@link #setFlags(EnumSet)} instead */
+    @Deprecated
     // The enumSet representation of the flags is transient because serializer don't handle this type
-    protected transient EnumSet<Flag> flagsEnumSet;
+    public transient EnumSet<Flag> flags;
 
-    protected String key;
-
-    protected byte[] data;
+    protected byte flagsAsByte;
 
     public Record() {
         // Empty constructor required for deserialization
-    }
-
-    public static Record of(String key, byte[] data) {
-        return new Record(key, data, 0, DEFAULT_FLAG);
-    }
-
-    public Record(String key, byte[] data, long watermark, EnumSet<Flag> flags) {
-        this.key = key;
-        this.data = data;
-        this.watermark = watermark;
-        setFlags(flags);
-    }
-
-    public long getWatermark() {
-        return watermark;
-    }
-
-    public EnumSet<Flag> getFlags() {
-        if (flagsEnumSet == null) {
-            flagsEnumSet = decodeFlags(flags);
-        }
-        return flagsEnumSet;
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public byte[] getData() {
-        return data;
-    }
-
-    public void setWatermark(long watermark) {
-        this.watermark = watermark;
-    }
-
-    public void setFlags(EnumSet<Flag> flags) {
-        this.flags = (byte) encodeFlags(flags);
-        this.flagsEnumSet = flags;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
-    }
-
-    public Record() {
-        // Empty constructor required for Avro deserialization
     }
 
     /**
@@ -126,9 +87,9 @@ public class Record implements Externalizable {
 
     public Record(String key, byte[] data, long watermark, EnumSet<Flag> flags) {
         this.key = key;
-        this.data = data;
         this.watermark = watermark;
-        this.flags = (flags == null) ? DEFAULT_FLAG : flags;
+        setData(data);
+        setFlags(flags);
     }
 
     /**
@@ -138,11 +99,51 @@ public class Record implements Externalizable {
         return new Record(key, data);
     }
 
+    public long getWatermark() {
+        return watermark;
+    }
+
+    public void setWatermark(long watermark) {
+        this.watermark = watermark;
+    }
+
+    public EnumSet<Flag> getFlags() {
+        if (flags == null) {
+            flags = decodeFlags(flagsAsByte);
+        }
+        return flags;
+    }
+
+    public void setFlags(EnumSet<Flag> flags) {
+        this.flags = flags;
+        this.flagsAsByte = (byte) encodeFlags(flags);
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        if (data != null) {
+            this.data = data;
+        } else {
+            this.data = NO_DATA;
+        }
+    }
+
     @Override
     public String toString() {
         String overview = "";
         String wmDate = "";
-        if (data != null) {
+        if (data != null && data.length > 0) {
             try {
                 overview = ", data=\"" + new String(data, "UTF-8").substring(0, min(data.length, 127)) + '"';
             } catch (UnsupportedEncodingException e) {
@@ -163,7 +164,7 @@ public class Record implements Externalizable {
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeLong(watermark);
         // use a short for backward compatibility
-        out.writeShort(flags);
+        out.writeShort(flagsAsByte);
         out.writeObject(key);
         if (data == null || data.length == 0) {
             out.writeInt(0);
@@ -177,11 +178,11 @@ public class Record implements Externalizable {
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         this.watermark = in.readLong();
         // use a short for backward compatibility
-        this.flags = (byte) in.readShort();
+        this.flagsAsByte = (byte) in.readShort();
         this.key = (String) in.readObject();
         int dataLength = in.readInt();
         if (dataLength == 0) {
-            this.data = null;
+            this.data = NO_DATA;
         } else {
             this.data = new byte[dataLength];
             // not using in.readFully because it is not impl by Chronicle WireObjectInput
@@ -226,18 +227,20 @@ public class Record implements Externalizable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
         Record record = (Record) o;
-        return watermark == record.watermark && flags == record.flags && Objects.equals(key, record.key)
+        return watermark == record.watermark && flagsAsByte == record.flagsAsByte && Objects.equals(key, record.key)
                 && Arrays.equals(data, record.data);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(watermark, flags, key);
+        int result = Objects.hash(watermark, flagsAsByte, key);
         result = 31 * result + Arrays.hashCode(data);
         return result;
     }
@@ -247,25 +250,5 @@ public class Record implements Externalizable {
         DEFAULT, COMMIT, POISON_PILL, SKIP, TRACE, PAUSE;
 
         public static final EnumSet<Flag> ALL_OPTS = EnumSet.allOf(Flag.class);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Record record = (Record) o;
-        return watermark == record.watermark && Objects.equals(flags, record.flags) && Objects.equals(key, record.key)
-                && Arrays.equals(data, record.data);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hash(watermark, flags, key);
-        result = 31 * result + Arrays.hashCode(data);
-        return result;
     }
 }

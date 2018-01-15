@@ -27,12 +27,11 @@ import org.apache.avro.message.SchemaStore;
 import org.apache.avro.reflect.ReflectData;
 
 /**
- * Avro Single object encoding: magic 2 bytes + schema fingerprint 8 bytes + avro binary.
- * See https://avro.apache.org/docs/current/spec.html#single_object_encoding
+ * Avro Single object encoding: magic 2 bytes + schema fingerprint 8 bytes + avro binary. See
+ * https://avro.apache.org/docs/current/spec.html#single_object_encoding When using a SchemaStore the writer and reader
+ * schemas can evolve.
  *
- * When using a SchemaStore the writer and reader schemas can evolve.
- *
- * @since 10.1
+ * @since 10.2
  */
 public class AvroMessageCodec<T> implements Codec<T> {
     protected final Class<T> messageClass;

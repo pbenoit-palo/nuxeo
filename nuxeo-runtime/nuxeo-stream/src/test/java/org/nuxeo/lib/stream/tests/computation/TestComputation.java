@@ -72,7 +72,7 @@ public class TestComputation {
         assertEquals(0, context.getRecords("o4").size());
 
         assertEquals("foo", context.getRecords("o1").get(0).getKey());
-        assertEquals("bar", new String(context.getRecords("o1").get(0).getData(), StandardCharsets.UTF_8));
+        assertEquals("bar", new String(context.getRecords("o1").get(0).getData(), UTF_8));
 
         // ask to process another record
         comp.processRecord(context, "i1", Record.of("foo", "bar".getBytes("UTF-8")));

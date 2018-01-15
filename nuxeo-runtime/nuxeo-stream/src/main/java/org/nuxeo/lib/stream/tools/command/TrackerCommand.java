@@ -35,13 +35,13 @@ import org.nuxeo.lib.stream.log.LogManager;
  */
 public class TrackerCommand extends Command {
 
-    protected static final String NAME = "tracker";
-
     public static final String COMPUTATION_NAME = "LatencyTracker";
 
     public static final String INPUT_STREAM = "log_null";
 
     public static final String INTERNAL_LOG_PREFIX = "_";
+
+    protected static final String NAME = "tracker";
 
     protected static final String DEFAULT_INTERVAL = "60";
 
@@ -130,7 +130,7 @@ public class TrackerCommand extends Command {
     protected void initTopology(LogManager manager) {
         topology = Topology.builder()
                            .addComputation(() -> new LatencyTrackerComputation(manager, logNames, COMPUTATION_NAME,
-                                   interval, count, verbose), Arrays.asList("i1:" + INPUT_STREAM, "o1:" + output))
+                                   interval, count, verbose, null), Arrays.asList("i1:" + INPUT_STREAM, "o1:" + output))
                            .build();
     }
 

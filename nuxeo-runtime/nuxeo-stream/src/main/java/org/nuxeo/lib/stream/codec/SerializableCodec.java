@@ -28,10 +28,10 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 /**
- * Java {@link java.io.Serializable} encoding. It is highly recommended to use {@link java.io.Externalizable},
- * for performance reason.
+ * Java {@link java.io.Serializable} encoding. It is highly recommended to use {@link java.io.Externalizable}, for
+ * performance reason.
  *
- * @since 10.1
+ * @since 10.2
  */
 public class SerializableCodec<T extends Serializable> implements Codec<T> {
 

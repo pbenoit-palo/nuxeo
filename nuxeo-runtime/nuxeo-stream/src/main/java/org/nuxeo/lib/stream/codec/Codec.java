@@ -21,7 +21,7 @@ package org.nuxeo.lib.stream.codec;
 /**
  * Convert an object to/from byte array.
  *
- * @since 10.1
+ * @since 10.2
  */
 public interface Codec<T> {
 

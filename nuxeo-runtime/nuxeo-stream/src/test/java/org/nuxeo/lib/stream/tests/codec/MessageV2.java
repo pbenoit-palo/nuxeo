@@ -23,7 +23,7 @@ import org.apache.avro.reflect.AvroIgnore;
 import org.apache.avro.reflect.Nullable;
 
 /**
- * @since 10.1
+ * @since 10.2
  */
 public class MessageV2 extends MessageV1 {
 

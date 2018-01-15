@@ -33,7 +33,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.avro.AvroRuntimeException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.After;
@@ -41,14 +40,14 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.nuxeo.lib.stream.computation.Record;
-import org.nuxeo.lib.stream.computation.Watermark;
-import org.nuxeo.lib.stream.log.Latency;
 import org.nuxeo.lib.stream.codec.AvroBinaryCodec;
 import org.nuxeo.lib.stream.codec.AvroJsonCodec;
 import org.nuxeo.lib.stream.codec.AvroMessageCodec;
 import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.codec.SerializableCodec;
+import org.nuxeo.lib.stream.computation.Record;
+import org.nuxeo.lib.stream.computation.Watermark;
+import org.nuxeo.lib.stream.log.Latency;
 import org.nuxeo.lib.stream.log.LogAppender;
 import org.nuxeo.lib.stream.log.LogLag;
 import org.nuxeo.lib.stream.log.LogManager;
@@ -58,7 +57,6 @@ import org.nuxeo.lib.stream.log.LogRecord;
 import org.nuxeo.lib.stream.log.LogTailer;
 import org.nuxeo.lib.stream.log.RebalanceException;
 import org.nuxeo.lib.stream.tests.KeyValueMessage;
-import sun.font.TrueTypeFont;
 
 public abstract class TestLog {
     protected static final Log log = LogFactory.getLog(TestLog.class);
@@ -775,8 +773,8 @@ public abstract class TestLog {
             tailer1.commit();
             tailer2.commit();
         }
-        List<Latency> latencies = manager.<Record> getLatencyPerPartition(logName, GROUP1,
-                (rec -> Watermark.ofValue(rec.watermark).getTimestamp()), (rec -> rec.key));
+        List<Latency> latencies = manager.getLatencyPerPartition(logName, GROUP1, null,
+                (rec -> Watermark.ofValue(rec.getWatermark()).getTimestamp()), (Record::getKey));
         // check that the latency point to the last committed keys
         assertEquals(latencies.get(0).toString(), "here", latencies.get(0).key());
         assertEquals(latencies.get(1).toString(), "here", latencies.get(1).key());
@@ -791,7 +789,7 @@ public abstract class TestLog {
 
     protected void assertRecordKeyEquals(String expectedKey, LogRecord<Record> record) {
         assertNotNull(record);
-        assertEquals(expectedKey, record.message().key);
+        assertEquals(expectedKey, record.message().getKey());
     }
 
     protected Record createRecord(String key) throws UnsupportedEncodingException {
@@ -851,25 +849,45 @@ public abstract class TestLog {
     }
 
     @Test
-    public void testMixingCodec() throws Exception {
+    public void testCodecCheckAppender() throws Exception {
         final int LOG_SIZE = 1;
         final String GROUP = "defaultTest";
         manager.createIfNotExists(logName, LOG_SIZE);
         KeyValueMessage msg1 = KeyValueMessage.of("1234567890", "0987654321".getBytes("UTF-8"));
 
-        Codec<KeyValueMessage> codecWrite = new SerializableCodec<>();
-        Codec<KeyValueMessage> codecRead = new AvroBinaryCodec<>(KeyValueMessage.class);
-        LogAppender<KeyValueMessage> appender = manager.getAppender(logName, codecWrite);
-        appender.append(0, msg1);
+        Codec<KeyValueMessage> codec1 = new AvroBinaryCodec<>(KeyValueMessage.class);
+        Codec<KeyValueMessage> codec2 = new SerializableCodec<>();
 
-        try (LogTailer<KeyValueMessage> tailer = manager.createTailer(GROUP, LogPartition.of(logName, 0), codecRead)) {
-            try {
-                tailer.read(DEF_TIMEOUT);
-                fail("Try to read with a different codec should fail");
-            } catch (AvroRuntimeException e) {
-                // expected Decoding datum failed
-            }
+        LogAppender<KeyValueMessage> appender = manager.getAppender(logName, codec1);
+        appender.append(0, msg1);
+        try {
+            LogAppender<KeyValueMessage> appender2 = manager.getAppender(logName, codec2);
+            fail("Should not be possible to open an appender with a different codec");
+        } catch (IllegalArgumentException e) {
+            // expected
         }
+
+        try {
+            LogTailer<KeyValueMessage> tailer = manager.createTailer(GROUP, logName, codec2);
+            fail("Should not be possible to read an appender with a different codec");
+        } catch (IllegalArgumentException e) {
+            // expected Decoding datum failed
+        }
+
+        try {
+            LogTailer<KeyValueMessage> tailer = manager.createTailer(GROUP, logName);
+            fail("Should not be possible to read an appender without explicit codec");
+        } catch (IllegalArgumentException e) {
+            // expected Decoding datum failed
+        }
+
+        try (LogTailer<KeyValueMessage> tailer = manager.createTailer(GROUP, logName, codec1)) {
+            assertEquals(msg1, tailer.read(DEF_TIMEOUT).message());
+        }
+
+        // but it is possible to request an appender without knowing its codec
+        LogAppender<KeyValueMessage> appender3 = manager.getAppender(logName);
+        assertEquals(codec1, appender3.getCodec());
     }
 
     protected String readKey(LogTailer<KeyValueMessage> tailer) throws InterruptedException {

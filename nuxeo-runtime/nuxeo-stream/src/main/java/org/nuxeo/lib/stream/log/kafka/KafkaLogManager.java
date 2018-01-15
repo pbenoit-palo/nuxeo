@@ -69,7 +69,8 @@ public class KafkaLogManager extends AbstractLogManager {
      * @deprecated since 10.2, zookeeper is not needed anymore, you need to remove the zkServers parameter.
      */
     @Deprecated
-    public KafkaLogManager(String zkServers, String prefix, Properties producerProperties, Properties consumerProperties) {
+    public KafkaLogManager(String zkServers, String prefix, Properties producerProperties,
+            Properties consumerProperties) {
         this(prefix, producerProperties, consumerProperties);
     }
 
@@ -145,7 +146,7 @@ public class KafkaLogManager extends AbstractLogManager {
     @Override
     protected <M extends Externalizable> LogTailer<M> doSubscribe(String group, Collection<String> names,
             RebalanceListener listener, Codec<M> codec) {
-        return KafkaLogTailer.createAndSubscribe(codec, prefix, names, group, (Properties) consumerProperties.clone(),
+        return KafkaLogTailer.createAndSubscribe(codec, ns, names, group, (Properties) consumerProperties.clone(),
                 listener);
     }
 

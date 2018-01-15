@@ -28,7 +28,7 @@ import org.apache.avro.reflect.ReflectData;
 /**
  * Avro Binary format, there is no header, the schema must be the same for encoder and decoder.
  *
- * @since 10.1
+ * @since 10.2
  */
 public class AvroBinaryCodec<T> implements Codec<T> {
     protected final Class<T> messageClass;

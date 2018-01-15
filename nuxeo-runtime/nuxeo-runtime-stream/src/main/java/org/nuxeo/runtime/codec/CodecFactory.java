@@ -23,7 +23,7 @@ import org.nuxeo.lib.stream.codec.Codec;
 import java.util.Map;
 
 /**
- * @since 10.1
+ * @since 10.2
  */
 public interface CodecFactory {
 

@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.Computation;
 import org.nuxeo.lib.stream.computation.ComputationMetadataMapping;
 import org.nuxeo.lib.stream.computation.Record;
@@ -71,6 +72,8 @@ public class ComputationRunner implements Runnable, RebalanceListener {
 
     protected final WatermarkMonotonicInterval lowWatermark = new WatermarkMonotonicInterval();
 
+    protected final Codec<Record> codec;
+
     protected ComputationContextImpl context;
 
     protected volatile boolean stop;
@@ -95,18 +98,19 @@ public class ComputationRunner implements Runnable, RebalanceListener {
 
     @SuppressWarnings("unchecked")
     public ComputationRunner(Supplier<Computation> supplier, ComputationMetadataMapping metadata,
-            List<LogPartition> defaultAssignment, LogManager logManager) {
+            List<LogPartition> defaultAssignment, LogManager logManager, Codec<Record> codec) {
         this.supplier = supplier;
         this.metadata = metadata;
         this.logManager = logManager;
         this.context = new ComputationContextImpl(metadata);
+        this.codec = codec;
         if (metadata.inputStreams().isEmpty()) {
             this.tailer = null;
             assignmentLatch.countDown();
         } else if (logManager.supportSubscribe()) {
-            this.tailer = logManager.subscribe(metadata.name(), metadata.inputStreams(), this);
+            this.tailer = logManager.subscribe(metadata.name(), metadata.inputStreams(), this, codec);
         } else {
-            this.tailer = logManager.createTailer(metadata.name(), defaultAssignment);
+            this.tailer = logManager.createTailer(metadata.name(), defaultAssignment, codec);
             assignmentLatch.countDown();
         }
     }
@@ -354,7 +358,7 @@ public class ComputationRunner implements Runnable, RebalanceListener {
 
     protected void sendRecords() {
         for (String stream : metadata.outputStreams()) {
-            LogAppender<Record> appender = logManager.getAppender(stream);
+            LogAppender<Record> appender = logManager.getAppender(stream, codec);
             for (Record record : context.getRecords(stream)) {
                 // System.out.println(metadata.name() + " send record to " + stream + " lowWatermark " + lowWatermark);
                 if (record.getWatermark() == 0) {

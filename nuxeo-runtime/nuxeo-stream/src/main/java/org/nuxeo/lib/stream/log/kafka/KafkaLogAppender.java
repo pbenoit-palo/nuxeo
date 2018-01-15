@@ -67,25 +67,23 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
 
     protected final Codec<M> codec;
 
+    protected final Codec<M> encodingCodec;
+
     protected KafkaProducer<String, Bytes> producer;
 
     protected boolean closed;
 
-<<<<<<< fb1d9d00148818be69325582ac32ac7ece826c64
-    private KafkaLogAppender(KafkaNamespace ns, String name, Properties producerProperties, Properties consumerProperties) {
+    private KafkaLogAppender(Codec<M> codec, KafkaNamespace ns, String name, Properties producerProperties,
+            Properties consumerProperties) {
+        this.codec = codec;
+        if (codec != null) {
+            this.encodingCodec = codec;
+        } else {
+            this.encodingCodec = new SerializableCodec<>();
+        }
         this.ns = ns;
         this.topic = ns.getTopicName(name);
-=======
-    private KafkaLogAppender(Codec<M> codec, String topic, String name, Properties producerProperties,
-            Properties consumerProperties) {
-        this.topic = topic;
->>>>>>> NXP-22597: Add codec param on getAppender and creteTailer methods, keep default encoding when codec is null for backward compat
         this.name = name;
-        if (codec != null) {
-            this.codec = codec;
-        } else {
-            this.codec = new SerializableCodec<>();
-        }
         this.producerProps = producerProperties;
         this.consumerProps = consumerProperties;
         this.producer = new KafkaProducer<>(this.producerProps);
@@ -95,15 +93,9 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
         }
     }
 
-<<<<<<< fb1d9d00148818be69325582ac32ac7ece826c64
-    public static <M extends Externalizable> KafkaLogAppender<M> open(KafkaNamespace ns, String name,
+    public static <M extends Externalizable> KafkaLogAppender<M> open(Codec<M> codec, KafkaNamespace ns, String name,
             Properties producerProperties, Properties consumerProperties) {
-        return new KafkaLogAppender<>(ns, name, producerProperties, consumerProperties);
-=======
-    public static <M extends Externalizable> KafkaLogAppender<M> open(Codec<M> codec, String topic, String name,
-            Properties producerProperties, Properties consumerProperties) {
-        return new KafkaLogAppender<>(codec, topic, name, producerProperties, consumerProperties);
->>>>>>> NXP-22597: Add codec param on getAppender and creteTailer methods, keep default encoding when codec is null for backward compat
+        return new KafkaLogAppender<>(codec, ns, name, producerProperties, consumerProperties);
     }
 
     @Override
@@ -121,7 +113,6 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
     }
 
     @Override
-<<<<<<< fb1d9d00148818be69325582ac32ac7ece826c64
     public LogOffset append(String key, M message) {
         Objects.requireNonNull(key);
         int partition = (key.hashCode() & 0x7fffffff) % size;
@@ -129,17 +120,13 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
     }
 
     @Override
-    public LogOffset append(int partition, Externalizable message) {
-=======
     public LogOffset append(int partition, M message) {
-        Bytes value = Bytes.wrap(codec.encode(message));
->>>>>>> NXP-22597: Add codec param on getAppender and creteTailer methods, keep default encoding when codec is null for backward compat
         String key = String.valueOf(partition);
         return append(partition, key, message);
     }
 
-    public LogOffset append(int partition, String key, Externalizable message) {
-        Bytes value = Bytes.wrap(messageAsByteArray(message));
+    public LogOffset append(int partition, String key, M message) {
+        Bytes value = Bytes.wrap(encodingCodec.encode(message));
         ProducerRecord<String, Bytes> record = new ProducerRecord<>(topic, partition, key, value);
         Future<RecordMetadata> future = producer.send(record);
         RecordMetadata result;
@@ -190,6 +177,11 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
     @Override
     public boolean closed() {
         return closed;
+    }
+
+    @Override
+    public Codec<M> getCodec() {
+        return codec;
     }
 
     protected boolean isProcessed(String group, TopicPartition topicPartition, long offset) {

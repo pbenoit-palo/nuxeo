@@ -21,7 +21,9 @@ package org.nuxeo.runtime.codec;
 import org.nuxeo.lib.stream.codec.Codec;
 
 /**
- * @since 10.1
+ * Gives access to coder/decoder for a class .
+ *
+ * @since 10.2
  */
 public interface CodecService {
 

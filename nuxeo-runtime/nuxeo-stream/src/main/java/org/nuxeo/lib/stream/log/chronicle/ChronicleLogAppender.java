@@ -186,7 +186,7 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
         if (codec != null) {
             appender.writeDocument(w -> w.write().bytes(codec.encode(message)));
         } else {
-            // default format
+            // default format for backward compatibility
             appender.writeDocument(w -> w.write("msg").object(message));
         }
         long offset = appender.lastIndexAppended();
@@ -260,6 +260,11 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
     @Override
     public boolean closed() {
         return closed;
+    }
+
+    @Override
+    public Codec<M> getCodec() {
+        return codec;
     }
 
     protected boolean isProcessed(ChronicleLogOffsetTracker tracker, long offset) {

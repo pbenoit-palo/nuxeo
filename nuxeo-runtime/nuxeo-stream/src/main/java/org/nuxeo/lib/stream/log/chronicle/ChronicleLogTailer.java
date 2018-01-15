@@ -223,6 +223,11 @@ public class ChronicleLogTailer<M extends Externalizable> implements LogTailer<M
     }
 
     @Override
+    public Codec<M> getCodec() {
+        return codec;
+    }
+
+    @Override
     public String toString() {
         return "ChronicleLogTailer{" + "basePath='" + basePath + '\'' + ", id=" + id + ", closed=" + closed + '}';
     }

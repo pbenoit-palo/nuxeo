@@ -28,6 +28,8 @@ import java.util.Collections;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
+import org.nuxeo.lib.stream.codec.AvroMessageCodec;
+import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Settings;
 import org.nuxeo.lib.stream.computation.StreamProcessor;
@@ -46,11 +48,17 @@ import org.nuxeo.lib.stream.log.LogTailer;
 public abstract class TestStreamProcessor {
     private static final Log log = LogFactory.getLog(TestStreamProcessor.class);
 
+    // public Codec<Record> codec = new AvroJsonCodec<>(Record.class);
+    // public Codec<Record> codec = new AvroBinaryCodec<>(Record.class);
+    public Codec<Record> codec = new AvroMessageCodec<>(Record.class);
+    // public Codec<Record> codec = new SerializableCodec<>();
+
     public abstract LogManager getLogManager() throws Exception;
 
     public abstract LogManager getSameLogManager() throws Exception;
 
     public abstract StreamProcessor getStreamProcessor(LogManager logManager);
+    // public Codec<Record> codec = null;
 
     public void testSimpleTopo(int nbRecords, int concurrency) throws Exception {
         final long targetTimestamp = System.currentTimeMillis();
@@ -70,7 +78,7 @@ public abstract class TestStreamProcessor {
                                             Arrays.asList("i1:s4", "o1:output"))
                                     .build();
         // one thread for each computation
-        Settings settings = new Settings(concurrency, concurrency).setConcurrency("GENERATOR", 1);
+        Settings settings = new Settings(concurrency, concurrency, codec).setConcurrency("GENERATOR", 1);
         // uncomment to get the plantuml diagram
         // System.out.println(topology.toPlantuml(settings));
         try (LogManager manager = getLogManager()) {
@@ -162,7 +170,7 @@ public abstract class TestStreamProcessor {
                                             Arrays.asList("i1:s5", "o1:output"))
                                     .build();
 
-        Settings settings = new Settings(concurrency, partitions).setPartitions("output", 1);
+        Settings settings = new Settings(concurrency, partitions, codec).setPartitions("output", 1);
         settings.setConcurrency("C4", 16).setPartitions("s3", 16).setConcurrency("COUNTER", 4).setPartitions("s5", 4);
         // uncomment to get the plantuml diagram
         // System.out.println(topology.toPlantuml(settings));
@@ -242,7 +250,7 @@ public abstract class TestStreamProcessor {
                                              Collections.singletonList("o1:s1"))
                                      .build();
 
-        Settings settings1 = new Settings(concurrent, concurrent);
+        Settings settings1 = new Settings(concurrent, concurrent, codec);
 
         Topology topology2 = Topology.builder()
                                      .addComputation(() -> new ComputationForward("C1", 1, 2),
@@ -258,8 +266,8 @@ public abstract class TestStreamProcessor {
                                              Arrays.asList("i1:s5", "o1:output"))
                                      .build();
 
-        Settings settings2 = new Settings(concurrent, concurrent).setPartitions("output", 1).setConcurrency("COUNTER",
-                concurrent);
+        Settings settings2 = new Settings(concurrent, concurrent, codec).setPartitions("output", 1)
+                                                                        .setConcurrency("COUNTER", concurrent);
         // uncomment to get the plantuml diagram
         // System.out.println(topology.toPlantuml(settings));
 
@@ -327,7 +335,7 @@ public abstract class TestStreamProcessor {
                                              () -> new ComputationSource("GENERATOR", 1, nbRecords, 1, targetTimestamp),
                                              Collections.singletonList("o1:s1"))
                                      .build();
-        Settings settings1 = new Settings(concurrent, concurrent);
+        Settings settings1 = new Settings(concurrent, concurrent, codec);
 
         try (LogManager manager = getLogManager()) {
             StreamProcessor processor = getStreamProcessor(manager);
@@ -369,7 +377,7 @@ public abstract class TestStreamProcessor {
     // ---------------------------------
     // helpers
     protected int readCounterFrom(LogManager manager, String stream) throws InterruptedException {
-        int partitions = manager.getAppender(stream).size();
+        int partitions = manager.getAppender(stream, codec).size();
         int ret = 0;
         for (int i = 0; i < partitions; i++) {
             ret += readCounterFromPartition(manager, stream, i);
@@ -379,7 +387,7 @@ public abstract class TestStreamProcessor {
 
     protected int readCounterFromPartition(LogManager manager, String stream, int partition)
             throws InterruptedException {
-        LogTailer<Record> tailer = manager.createTailer("results", LogPartition.of(stream, partition));
+        LogTailer<Record> tailer = manager.createTailer("results", LogPartition.of(stream, partition), codec);
         int result = 0;
         tailer.toStart();
         for (LogRecord<Record> logRecord = tailer.read(
@@ -392,14 +400,14 @@ public abstract class TestStreamProcessor {
 
     protected int countRecordIn(LogManager manager, String stream) throws Exception {
         int ret = 0;
-        for (int i = 0; i < manager.getAppender(stream).size(); i++) {
+        for (int i = 0; i < manager.getAppender(stream, codec).size(); i++) {
             ret += countRecordInPartition(manager, stream, i);
         }
         return ret;
     }
 
     protected int countRecordInPartition(LogManager manager, String stream, int partition) throws Exception {
-        try (LogTailer<Record> tailer = manager.createTailer("results", LogPartition.of(stream, partition))) {
+        try (LogTailer<Record> tailer = manager.createTailer("results", LogPartition.of(stream, partition), codec)) {
             int result = 0;
             tailer.toStart();
             for (LogRecord<Record> logRecord = tailer.read(

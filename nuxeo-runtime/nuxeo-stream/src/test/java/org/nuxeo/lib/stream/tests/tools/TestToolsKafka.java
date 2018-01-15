@@ -56,7 +56,7 @@ public class TestToolsKafka extends TestTools {
                 getManagerOptions(), LOG_NAME, Instant.now().plus(1, ChronoUnit.HOURS)));
         // move to target timestamp
         run(String.format("position %s --log-name %s --group anotherGroup --after-date %s", getManagerOptions(),
-                LOG_NAME, Instant.ofEpochMilli(Watermark.ofValue(targetRecord.watermark).getTimestamp())));
+                LOG_NAME, Instant.ofEpochMilli(Watermark.ofValue(targetRecord.getWatermark()).getTimestamp())));
         // open a tailer with the moved group we should be on the same record
         try (LogTailer<Record> tailer = getManager().createTailer("anotherGroup", LOG_NAME)) {
             LogRecord<Record> rec = tailer.read(DEF_TIMEOUT);

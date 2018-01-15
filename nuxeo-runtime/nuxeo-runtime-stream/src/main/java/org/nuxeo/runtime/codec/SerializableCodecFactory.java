@@ -24,7 +24,7 @@ import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.codec.SerializableCodec;
 
 /**
- * @since 10.1
+ * @since 10.2
  */
 public class SerializableCodecFactory implements CodecFactory {
 

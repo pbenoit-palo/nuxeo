@@ -34,7 +34,7 @@ import org.apache.avro.reflect.ReflectDatumWriter;
 /**
  * JSON Avro format for debugging purpose.
  *
- * @since 10.1
+ * @since 10.2
  */
 public class AvroJsonCodec<T> implements Codec<T> {
     protected final Class<T> messageClass;

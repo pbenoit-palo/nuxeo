@@ -15,7 +15,7 @@
  *
  *
  * Contributors:
- *     anechaev
+ *     bdelbosc
  */
 package org.nuxeo.runtime.codec;
 

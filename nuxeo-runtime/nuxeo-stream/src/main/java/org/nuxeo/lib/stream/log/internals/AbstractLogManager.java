@@ -29,8 +29,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import org.nuxeo.lib.stream.log.Latency;
+
 import org.nuxeo.lib.stream.codec.Codec;
+import org.nuxeo.lib.stream.log.Latency;
 import org.nuxeo.lib.stream.log.LogAppender;
 import org.nuxeo.lib.stream.log.LogLag;
 import org.nuxeo.lib.stream.log.LogManager;
@@ -76,6 +77,7 @@ public abstract class AbstractLogManager implements LogManager {
     public <M extends Externalizable> LogTailer<M> createTailer(String group, Collection<LogPartition> partitions,
             Codec<M> codec) {
         partitions.forEach(partition -> checkInvalidAssignment(group, partition));
+        partitions.forEach(partition -> checkInvalidCodec(partition, codec));
         LogTailer<M> ret = doCreateTailer(partitions, group, codec);
         partitions.forEach(partition -> tailersAssignments.put(new LogPartitionGroup(group, partition), ret));
         tailers.add(ret);
@@ -107,19 +109,47 @@ public abstract class AbstractLogManager implements LogManager {
         }
     }
 
+    protected void checkInvalidCodec(LogPartition partition, Codec codec) {
+        String codecClass = codec == null ? null : codec.getClass().getName();
+        if (appenders.containsKey(partition.name())) {
+            Codec appCodec = getAppender(partition.name()).getCodec();
+            String appCodecClass = appCodec == null ? null : appCodec.getClass().getName();
+            if (!Objects.equals(codecClass, appCodecClass)) {
+                throw new IllegalArgumentException(
+                        String.format("Try to tail on Log %s with different codec: %s instead of: %s", partition.name(),
+                                appCodecClass, codecClass));
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public synchronized <M extends Externalizable> LogAppender<M> getAppender(String name, Codec<M> codec) {
-        return (LogAppender<M>) appenders.computeIfAbsent(name, n -> {
+        LogAppender<M> ret = (LogAppender<M>) appenders.computeIfAbsent(name, n -> {
             if (exists(n)) {
                 return createAppender(n, codec);
             }
-            throw new IllegalArgumentException("unknown Log name: " + n);
+            throw new IllegalArgumentException("Unknown Log name: " + n);
         });
+        if (codec == null) {
+            // the requested codec is not known so no check
+            return ret;
+        }
+        if (ret.getCodec() == null) {
+            throw new IllegalArgumentException(String.format(
+                    "The appender for Log %s exists with a default codec, cannot use a different codec: %s", name,
+                    codec.getClass()));
+        }
+        if (!ret.getCodec().getClass().getName().equals(codec.getClass().getName())) {
+            throw new IllegalArgumentException(
+                    String.format("The appender for Log %s exists with a %s codec, cannot use a different codec: %s",
+                            name, codec.getClass(), ret.getCodec().getClass()));
+        }
+        return ret;
     }
 
     @Override
-    public <M extends Externalizable> List<Latency> getLatencyPerPartition(String name, String group,
+    public <M extends Externalizable> List<Latency> getLatencyPerPartition(String name, String group, Codec<M> codec,
             Function<M, Long> timestampExtractor, Function<M, String> keyExtractor) {
         long now = System.currentTimeMillis();
         List<LogLag> lags = getLagPerPartition(name, group);
@@ -135,7 +165,7 @@ public abstract class AbstractLogManager implements LogManager {
             // the committed offset point to the next record to process, here we want the last committed offset
             // which is the previous one
             LogOffset offset = new LogOffsetImpl(name, partition, lag.lowerOffset() - 1);
-            try (LogTailer<M> tailer = createTailer("tools", offset.partition())) {
+            try (LogTailer<M> tailer = createTailer("tools", offset.partition(), codec)) {
                 tailer.seek(offset);
                 LogRecord<M> record = tailer.read(Duration.ofSeconds(1));
                 if (record == null) {

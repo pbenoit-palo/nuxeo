@@ -151,13 +151,13 @@ public class RestoreCommand extends Command {
         try (LogTailer<Record> tailer = manager.createTailer(GROUP, key.getLogPartition())) {
             for (LogRecord<Record> rec = tailer.read(FIRST_READ_TIMEOUT); rec != null; rec = tailer.read(
                     READ_TIMEOUT)) {
-                if (targetKey != null && !targetKey.equals(rec.message().key)) {
+                if (targetKey != null && !targetKey.equals(rec.message().getKey())) {
                     continue;
                 }
-                long timestamp = Watermark.ofValue(rec.message().watermark).getTimestamp();
+                long timestamp = Watermark.ofValue(rec.message().getWatermark()).getTimestamp();
                 if (targetWatermark == timestamp) {
                     System.out.println(String.format("%s: offset: %s wm: %d key: %s", key, rec.offset(),
-                            rec.message().watermark, rec.message().key));
+                            rec.message().getWatermark(), rec.message().getKey()));
                     return rec.offset().nextOffset();
                 }
             }
@@ -172,15 +172,15 @@ public class RestoreCommand extends Command {
         try (LogTailer<Record> tailer = manager.createTailer(GROUP, input)) {
             for (LogRecord<Record> rec = tailer.read(FIRST_READ_TIMEOUT); rec != null; rec = tailer.read(
                     READ_TIMEOUT)) {
-                long timestamp = Watermark.ofValue(rec.message().watermark).getTimestamp();
+                long timestamp = Watermark.ofValue(rec.message().getWatermark()).getTimestamp();
                 if (date > 0 && timestamp > date) {
                     continue;
                 }
-                LogPartitionGroup key = decodeKey(rec.message().key);
+                LogPartitionGroup key = decodeKey(rec.message().getKey());
                 if (!logNames.contains(key.name)) {
                     continue;
                 }
-                Latency latency = decodeLatency(rec.message().data);
+                Latency latency = decodeLatency(rec.message().getData());
                 if (latency != null && latency.lower() > 0) {
                     // we don't want latency.lower = 0, this means either no record either records with unset watermark
                     latencies.put(key, latency);

@@ -37,12 +37,12 @@ import org.nuxeo.lib.stream.codec.SerializableCodec;
 import org.nuxeo.lib.stream.computation.Record;
 
 /**
- * @since 10.1
+ * @since 10.2
  */
 public class TestCodec {
 
     @Test
-    public void testAvroEvolution() throws Exception {
+    public void testAvroEvolution() {
         Codec<MessageV1> codec1 = new AvroMessageCodec<>(MessageV1.class);
         Codec<MessageV2> codec2 = new AvroMessageCodec<>(MessageV2.class);
         Codec<MessageV3> codec3 = new AvroMessageCodec<>(MessageV3.class);
@@ -63,7 +63,7 @@ public class TestCodec {
         // convert MessageV1 to MessageV2 without schema store -> fail
         byte[] data1 = codec1.encode(src1);
         try {
-            MessageV2 dest2 = codec2.decode(data1);
+            codec2.decode(data1);
             fail("There is no schema store on codec2 so it can not decode a MessageV1");
         } catch (MissingSchemaException e) {
             // expected
