@@ -27,9 +27,13 @@ import java.util.Collections;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.nuxeo.lib.stream.codec.AvroBinaryCodec;
+import org.nuxeo.lib.stream.codec.AvroJsonCodec;
 import org.nuxeo.lib.stream.codec.AvroMessageCodec;
 import org.nuxeo.lib.stream.codec.Codec;
+import org.nuxeo.lib.stream.codec.SerializableCodec;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Settings;
 import org.nuxeo.lib.stream.computation.StreamProcessor;
@@ -48,17 +52,15 @@ import org.nuxeo.lib.stream.log.LogTailer;
 public abstract class TestStreamProcessor {
     private static final Log log = LogFactory.getLog(TestStreamProcessor.class);
 
-    // public Codec<Record> codec = new AvroJsonCodec<>(Record.class);
-    // public Codec<Record> codec = new AvroBinaryCodec<>(Record.class);
+    protected static final String OUTPUT_STREAM = "output";
+
     public Codec<Record> codec = new AvroMessageCodec<>(Record.class);
-    // public Codec<Record> codec = new SerializableCodec<>();
 
     public abstract LogManager getLogManager() throws Exception;
 
     public abstract LogManager getSameLogManager() throws Exception;
 
     public abstract StreamProcessor getStreamProcessor(LogManager logManager);
-    // public Codec<Record> codec = null;
 
     public void testSimpleTopo(int nbRecords, int concurrency) throws Exception {
         final long targetTimestamp = System.currentTimeMillis();
@@ -75,7 +77,7 @@ public abstract class TestStreamProcessor {
                                             Arrays.asList("i1:s3", "o1:s4"))
                                     .addComputation(
                                             () -> new ComputationRecordCounter("COUNTER", Duration.ofMillis(100)),
-                                            Arrays.asList("i1:s4", "o1:output"))
+                                            Arrays.asList("i1:s4", "o1:" + OUTPUT_STREAM))
                                     .build();
         // one thread for each computation
         Settings settings = new Settings(concurrency, concurrency, codec).setConcurrency("GENERATOR", 1);
@@ -100,7 +102,7 @@ public abstract class TestStreamProcessor {
             Latency latency = processor.getLatency("COUNTER");
             assertEquals(latency.toString(), 0, latency.latency());
             // read the results
-            int result = readCounterFrom(manager, "output");
+            int result = readOutputCounter(manager);
             int expected = nbRecords * settings.getConcurrency("GENERATOR");
             if (result != expected) {
                 processor = getStreamProcessor(manager);
@@ -128,6 +130,50 @@ public abstract class TestStreamProcessor {
     }
 
     @Test
+    public void testSimpleTopoOneRecordOneThreadLegacyCodec() throws Exception {
+        codec = null;
+        try {
+            testSimpleTopo(1, 1);
+        } finally {
+            restoreDefaultCodec();
+        }
+    }
+
+    @Test
+    public void testSimpleTopoOneRecordOneThreadAvroJsonCodec() throws Exception {
+        codec = new AvroJsonCodec<>(Record.class);
+        try {
+            testSimpleTopo(1, 1);
+        } finally {
+            restoreDefaultCodec();
+        }
+    }
+
+    @Test
+    public void testSimpleTopoOneRecordOneThreadSerializableCodec() throws Exception {
+        codec = new SerializableCodec<>();
+        try {
+            testSimpleTopo(1, 1);
+        } finally {
+            restoreDefaultCodec();
+        }
+    }
+
+    @Test
+    public void testSimpleTopoOneRecordOneThreadAvroCodec() throws Exception {
+        codec = new AvroBinaryCodec<>(Record.class);
+        try {
+            testSimpleTopo(1, 1);
+        } finally {
+            restoreDefaultCodec();
+        }
+    }
+
+    protected void restoreDefaultCodec() {
+        codec = new AvroMessageCodec<>(Record.class);
+    }
+
+    @Test
     public void testSimpleTopoFewRecordsOneThread() throws Exception {
         testSimpleTopo(17, 1);
     }
@@ -137,7 +183,8 @@ public abstract class TestStreamProcessor {
         testSimpleTopo(1003, 1);
     }
 
-    // @Test
+    @Ignore("A wrong case")
+    @Test
     public void testSimpleTopoManyRecordsManyThread() throws Exception {
         // because of the concurrency record arrive in disorder in the final counter
         // if the last record is processed by the final counter
@@ -150,7 +197,6 @@ public abstract class TestStreamProcessor {
 
     public void testComplexTopo(int nbRecords, int concurrency, int partitions) throws Exception {
         final long targetTimestamp = System.currentTimeMillis();
-        final long targetWatermark = Watermark.ofTimestamp(targetTimestamp).getValue();
         Topology topology = Topology.builder()
                                     .addComputation(
                                             () -> new ComputationSource("GENERATOR", 1, nbRecords, 5, targetTimestamp),
@@ -180,12 +226,11 @@ public abstract class TestStreamProcessor {
             processor.init(topology, settings).start();
             assertTrue(processor.waitForAssignments(Duration.ofSeconds(10)));
             // no record are processed so far
-            long lowWatermark = processor.getLowWatermark();
 
             assertTrue(processor.drainAndStop(Duration.ofSeconds(100)));
             double elapsed = (double) (System.currentTimeMillis() - start) / 1000.0;
             // read the results
-            int result = readCounterFrom(manager, "output");
+            int result = readOutputCounter(manager);
             log.info(String.format(
                     "topo: complex, concurrency: %d, records: %s, took: %.2fs, throughput: %.2f records/s", concurrency,
                     result, elapsed, result / elapsed));
@@ -241,7 +286,6 @@ public abstract class TestStreamProcessor {
     @Test
     public void testStopAndResume() throws Exception {
         final long targetTimestamp = System.currentTimeMillis();
-        final long targetWatermark = Watermark.ofTimestamp(targetTimestamp).getValue();
         final int nbRecords = 1001;
         final int concurrent = 8;
         Topology topology1 = Topology.builder()
@@ -290,7 +334,6 @@ public abstract class TestStreamProcessor {
         for (int i = 0; i < 10; i++) {
             try (LogManager manager = getSameLogManager()) {
                 StreamProcessor processor = getStreamProcessor(manager);
-                long start = System.currentTimeMillis();
                 log.info("RESUME computations");
                 processor.init(topology2, settings2).start();
                 assertTrue(processor.waitForAssignments(Duration.ofSeconds(10)));
@@ -298,7 +341,7 @@ public abstract class TestStreamProcessor {
                 Thread.sleep(400 + i * 10);
                 log.info("KILL computations pool");
                 processor.shutdown();
-                long processed = readCounterFrom(manager, "output");
+                long processed = readOutputCounter(manager);
                 result += processed;
                 log.info("processed: " + processed + " total: " + result);
             }
@@ -313,7 +356,7 @@ public abstract class TestStreamProcessor {
             assertTrue(processor.drainAndStop(Duration.ofSeconds(200)));
             double elapsed = (double) (System.currentTimeMillis() - start) / 1000.0;
             // read the results
-            long processed = readCounterFrom(manager, "output");
+            long processed = readOutputCounter(manager);
             result += processed;
             // the number of results can be bigger than expected, in the case of checkpoint failure
             // some records can be reprocessed (duplicate), this is a delivery at least one, not exactly one.
@@ -376,11 +419,11 @@ public abstract class TestStreamProcessor {
 
     // ---------------------------------
     // helpers
-    protected int readCounterFrom(LogManager manager, String stream) throws InterruptedException {
-        int partitions = manager.getAppender(stream, codec).size();
+    protected int readOutputCounter(LogManager manager) throws InterruptedException {
+        int partitions = manager.getAppender(OUTPUT_STREAM, codec).size();
         int ret = 0;
         for (int i = 0; i < partitions; i++) {
-            ret += readCounterFromPartition(manager, stream, i);
+            ret += readCounterFromPartition(manager, OUTPUT_STREAM, i);
         }
         return ret;
     }

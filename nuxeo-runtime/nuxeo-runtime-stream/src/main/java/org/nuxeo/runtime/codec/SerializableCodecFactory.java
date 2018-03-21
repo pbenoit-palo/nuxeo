@@ -33,6 +33,7 @@ public class SerializableCodecFactory implements CodecFactory {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> Codec<T> getCodec(Class<T> objectClass) {
         return new SerializableCodec();

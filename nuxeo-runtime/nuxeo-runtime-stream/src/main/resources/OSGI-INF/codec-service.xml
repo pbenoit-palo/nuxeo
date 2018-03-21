@@ -2,7 +2,7 @@
 <component name="org.nuxeo.runtime.codec.service" version="1.0">
 
   <documentation>
-    The component allows to register Codec to encode record.
+    The component allows you to register a Codec to encode records.
   </documentation>
 
   <implementation class="org.nuxeo.runtime.codec.CodecServiceImpl" />

@@ -20,7 +20,8 @@ package org.nuxeo.runtime.stream.tests;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+
+import java.util.EnumSet;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,10 +32,7 @@ import org.nuxeo.runtime.codec.CodecService;
 import org.nuxeo.runtime.test.runner.Deploy;
 import org.nuxeo.runtime.test.runner.Features;
 import org.nuxeo.runtime.test.runner.FeaturesRunner;
-import org.nuxeo.runtime.test.runner.LocalDeploy;
 import org.nuxeo.runtime.test.runner.RuntimeFeature;
-
-import java.util.EnumSet;
 
 /**
  * @since 9.3
@@ -42,11 +40,11 @@ import java.util.EnumSet;
 @RunWith(FeaturesRunner.class)
 @Features(RuntimeFeature.class)
 @Deploy("org.nuxeo.runtime.stream")
-@LocalDeploy("org.nuxeo.runtime.stream:test-codec-contrib.xml")
+@Deploy("org.nuxeo.runtime.stream:test-codec-contrib.xml")
 public class TestCodecService {
 
     @Test
-    public void testService() throws Exception {
+    public void testService() {
         CodecService service = Framework.getService(CodecService.class);
         assertNotNull(service);
     }

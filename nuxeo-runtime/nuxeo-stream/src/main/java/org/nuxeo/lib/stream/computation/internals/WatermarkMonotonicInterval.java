@@ -36,9 +36,6 @@ public class WatermarkMonotonicInterval {
 
     protected Watermark high = Watermark.LOWEST;
 
-    public WatermarkMonotonicInterval() {
-    }
-
     /**
      * Take in account the watermark.<br/>
      * Not thread safe.

@@ -180,6 +180,12 @@ public class KafkaLogAppender<M extends Externalizable> implements CloseableLogA
     }
 
     @Override
+    public String toString() {
+        return "KafkaLogAppender{" + "name='" + name + '\'' + ", size=" + size + ", ns=" + ns + ", closed=" + closed
+                + ", codec=" + codec + '}';
+    }
+
+    @Override
     public Codec<M> getCodec() {
         return codec;
     }

@@ -26,9 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.nuxeo.lib.stream.computation.Computation;
 import org.nuxeo.lib.stream.computation.ComputationMetadataMapping;
 import org.nuxeo.lib.stream.computation.Record;
@@ -39,8 +37,6 @@ import org.nuxeo.lib.stream.computation.internals.ComputationContextImpl;
  * @since 9.3
  */
 public class TestComputation {
-    @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
 
     @Test
     public void testComputationForward() throws Exception {
@@ -85,7 +81,7 @@ public class TestComputation {
     }
 
     @Test
-    public void testComputationSource() throws Exception {
+    public void testComputationSource() {
         int nbRecordsToGenerate = 7;
         int batchSize = 3;
         int outputStreams = 2;

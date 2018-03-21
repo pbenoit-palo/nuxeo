@@ -196,10 +196,10 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
         }
         if (log.isDebugEnabled()) {
             String msg = "Polling " + id + " returns " + records.size() + " records";
-            if (records.size() > 0) {
-                log.debug(msg);
-            } else {
+            if (records.isEmpty()) {
                 log.trace(msg);
+            } else {
+                log.debug(msg);
             }
         }
         return records.size();
@@ -233,10 +233,8 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
                              .map(tp -> String.format("%s-%02d:+%d", ns.getLogName(tp.topic()), tp.partition(),
                                      toLastCommitted(tp)))
                              .collect(Collectors.joining("|"));
-        if (msg.length() > 0) {
-            if (log.isInfoEnabled()) {
-                log.info("toLastCommitted offsets: " + group + ":" + msg);
-            }
+        if (msg.length() > 0 && log.isInfoEnabled()) {
+            log.info("toLastCommitted offsets: " + group + ":" + msg);
         }
         lastOffsets.clear();
         records.clear();
@@ -418,7 +416,7 @@ public class KafkaLogTailer<M extends Externalizable> implements LogTailer<M>, C
 
     @Override
     public String toString() {
-        return "KafkaLogTailer{" + "ns='" + ns + '\'' + ", id=" + id + ", closed=" + closed + '}';
+        return "KafkaLogTailer{" + "ns='" + ns + '\'' + ", id=" + id + ", closed=" + closed + ", codec=" + codec + '}';
     }
 
     @Override

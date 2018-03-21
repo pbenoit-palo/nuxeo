@@ -300,7 +300,7 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
     @Override
     public String toString() {
         return "ChronicleLogAppender{" + "nbPartitions=" + nbPartitions + ", basePath=" + basePath + ", name='" + name
-                + '\'' + ", retention=" + retention + ", closed=" + closed + '}';
+                + '\'' + ", retention=" + retention + ", closed=" + closed + ", codec=" + codec + '}';
     }
 
     public ChronicleRetentionDuration getRetention() {

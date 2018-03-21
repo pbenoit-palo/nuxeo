@@ -229,7 +229,8 @@ public class ChronicleLogTailer<M extends Externalizable> implements LogTailer<M
 
     @Override
     public String toString() {
-        return "ChronicleLogTailer{" + "basePath='" + basePath + '\'' + ", id=" + id + ", closed=" + closed + '}';
+        return "ChronicleLogTailer{" + "basePath='" + basePath + '\'' + ", id=" + id + ", closed=" + closed + ", codec="
+                + codec + '}';
     }
 
 }
