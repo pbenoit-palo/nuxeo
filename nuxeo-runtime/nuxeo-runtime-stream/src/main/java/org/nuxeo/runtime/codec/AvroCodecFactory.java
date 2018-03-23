@@ -48,7 +48,7 @@ public class AvroCodecFactory implements CodecFactory {
             return new AvroBinaryCodec<>(objectClass);
         case "message":
         default:
-            // TODO: handle schema store
+            // TODO: Use an Avro Schema store registry
             return new AvroMessageCodec<>(objectClass);
         }
     }

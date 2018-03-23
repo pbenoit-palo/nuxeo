@@ -24,13 +24,14 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.common.xmap.annotation.XObject;
 import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
 import org.nuxeo.runtime.model.DefaultComponent;
 
 public class CodecServiceImpl extends DefaultComponent implements CodecService {
-    public static final String CODEC_XP = "codec";
+    public static final String CODEC_XP =  CodecDescriptor.class.getAnnotation(XObject.class).value();
 
     public static final int APPLICATION_STARTED_ORDER = -600;
 

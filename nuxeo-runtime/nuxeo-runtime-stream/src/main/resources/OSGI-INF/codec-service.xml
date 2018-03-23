@@ -16,7 +16,7 @@
   </extension-point>
 
   <extension target="org.nuxeo.runtime.codec.service" point="codec">
-    <codec name="default" class="org.nuxeo.runtime.codec.SerializableCodecFactory" />
+    <codec name="java" class="org.nuxeo.runtime.codec.SerializableCodecFactory" />
     <codec name="avro" class="org.nuxeo.runtime.codec.AvroCodecFactory">
       <option name="encoding">message</option>
     </codec>
