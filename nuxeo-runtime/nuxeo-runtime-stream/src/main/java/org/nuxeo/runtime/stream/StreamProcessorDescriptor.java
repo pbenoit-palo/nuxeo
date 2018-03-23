@@ -41,7 +41,7 @@ import org.nuxeo.runtime.codec.CodecService;
 public class StreamProcessorDescriptor {
     public static final Integer DEFAULT_CONCURRENCY = 4;
 
-    public static final String DEFAULT_CODEC = "avro";
+    public static final String DEFAULT_CODEC = "java";
 
     @XNode("@name")
     public String name;

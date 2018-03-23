@@ -40,7 +40,6 @@ import org.nuxeo.runtime.test.runner.RuntimeFeature;
 @RunWith(FeaturesRunner.class)
 @Features(RuntimeFeature.class)
 @Deploy("org.nuxeo.runtime.stream")
-@Deploy("org.nuxeo.runtime.stream:test-codec-contrib.xml")
 public class TestCodecService {
 
     @Test
@@ -55,7 +54,7 @@ public class TestCodecService {
         Record record = Record.of("key", "value".getBytes("UTF-8"));
         record.setFlags(EnumSet.of(Record.Flag.COMMIT, Record.Flag.POISON_PILL));
 
-        Codec<Record> codec = service.getCodec("default", Record.class);
+        Codec<Record> codec = service.getCodec("java", Record.class);
         checkCodec(record, codec);
         codec = service.getCodec("avro", Record.class);
         checkCodec(record, codec);
@@ -64,7 +63,7 @@ public class TestCodecService {
         codec = service.getCodec("avroJson", Record.class);
         checkCodec(record, codec);
 
-        codec = service.getCodec("default", Record.class);
+        codec = service.getCodec("java", Record.class);
         checkCodec(record, codec);
     }
 
