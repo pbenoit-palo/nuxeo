@@ -118,8 +118,12 @@ public class ChronicleLogTailer<M extends Externalizable> implements LogTailer<M
             }
         } else {
             // default format to keep backward compatibility
-            if (!cqTailer.readDocument(w -> value.add((M) w.read("msg").object()))) {
-                return null;
+            try {
+                if (!cqTailer.readDocument(w -> value.add((M) w.read("msg").object()))) {
+                    return null;
+                }
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException(e);
             }
         }
         return new LogRecord<>(value.get(0), new LogOffsetImpl(partition, offset));

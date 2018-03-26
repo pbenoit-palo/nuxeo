@@ -51,6 +51,8 @@ public abstract class AbstractLogManager implements LogManager {
 
     protected abstract void create(String name, int size);
 
+    protected abstract int getSize(String name);
+
     protected abstract <M extends Externalizable> CloseableLogAppender<M> createAppender(String name, Codec<M> codec);
 
     protected abstract <M extends Externalizable> LogTailer<M> doCreateTailer(Collection<LogPartition> partitions,
@@ -74,14 +76,32 @@ public abstract class AbstractLogManager implements LogManager {
     }
 
     @Override
+    public int size(String name) {
+        if (appenders.containsKey(name)) {
+            return appenders.get(name).size();
+        }
+        return getSize(name);
+    }
+
+    @Override
     public <M extends Externalizable> LogTailer<M> createTailer(String group, Collection<LogPartition> partitions,
             Codec<M> codec) {
         partitions.forEach(partition -> checkInvalidAssignment(group, partition));
-        partitions.forEach(partition -> checkInvalidCodec(partition, codec));
-        LogTailer<M> ret = doCreateTailer(partitions, group, codec);
+        Codec<M> tailerCodec = codec == null ? guessCodec(partitions) : codec;
+        partitions.forEach(partition -> checkInvalidCodec(partition, tailerCodec));
+        LogTailer<M> ret = doCreateTailer(partitions, group, tailerCodec);
         partitions.forEach(partition -> tailersAssignments.put(new LogPartitionGroup(group, partition), ret));
         tailers.add(ret);
         return ret;
+    }
+
+    protected <M extends Externalizable> Codec<M> guessCodec(Collection<LogPartition> partitions) {
+        for (LogPartition partition : partitions) {
+            if (appenders.containsKey(partition.name())) {
+                return (Codec<M>) getAppender(partition.name()).getCodec();
+            }
+        }
+        return null;
     }
 
     @Override
@@ -110,15 +130,8 @@ public abstract class AbstractLogManager implements LogManager {
     }
 
     protected void checkInvalidCodec(LogPartition partition, Codec codec) {
-        String codecClass = codec == null ? null : codec.getClass().getName();
         if (appenders.containsKey(partition.name())) {
-            Codec appCodec = getAppender(partition.name()).getCodec();
-            String appCodecClass = appCodec == null ? null : appCodec.getClass().getName();
-            if (!Objects.equals(codecClass, appCodecClass)) {
-                throw new IllegalArgumentException(
-                        String.format("Try to tail on Log %s with different codec: %s instead of: %s", partition.name(),
-                                appCodecClass, codecClass));
-            }
+            getAppender(partition.name(), codec);
         }
     }
 
@@ -131,21 +144,22 @@ public abstract class AbstractLogManager implements LogManager {
             }
             throw new IllegalArgumentException("Unknown Log name: " + n);
         });
-        if (codec == null) {
-            // the requested codec is not known so no check
+        if (codec == null || sameCodec(ret.getCodec(), codec)) {
             return ret;
         }
-        if (ret.getCodec() == null) {
-            throw new IllegalArgumentException(String.format(
-                    "The appender for Log %s exists with a default codec, cannot use a different codec: %s", name,
-                    codec.getClass()));
+        throw new IllegalArgumentException(String.format(
+                "The appender for Log %s exists and expecting codec: %s, cannot use a different codec: %s", name,
+                ret.getCodec(), codec));
+    }
+
+    protected boolean sameCodec(Codec codec1, Codec codec2) {
+        if (codec1 == codec2) {
+            return true;
         }
-        if (!ret.getCodec().getClass().getName().equals(codec.getClass().getName())) {
-            throw new IllegalArgumentException(
-                    String.format("The appender for Log %s exists with a %s codec, cannot use a different codec: %s",
-                            name, codec.getClass(), ret.getCodec().getClass()));
+        if (codec1 != null && codec2 != null && codec1.getClass().isInstance(codec2)) {
+            return true;
         }
-        return ret;
+        return false;
     }
 
     @Override

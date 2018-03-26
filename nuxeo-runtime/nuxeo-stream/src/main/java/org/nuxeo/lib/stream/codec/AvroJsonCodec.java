@@ -37,6 +37,8 @@ import org.apache.avro.reflect.ReflectDatumWriter;
  * @since 10.2
  */
 public class AvroJsonCodec<T> implements Codec<T> {
+    public static final String NAME = "avroJson";
+
     protected final Class<T> messageClass;
 
     protected Schema schema;
@@ -50,6 +52,11 @@ public class AvroJsonCodec<T> implements Codec<T> {
         schema = ReflectData.get().getSchema(messageClass);
         writer = new ReflectDatumWriter<>(schema);
         reader = new ReflectDatumReader<>(schema);
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Override

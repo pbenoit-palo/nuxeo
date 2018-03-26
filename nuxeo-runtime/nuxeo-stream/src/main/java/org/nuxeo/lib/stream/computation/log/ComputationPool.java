@@ -61,17 +61,21 @@ public class ComputationPool {
 
     protected final List<ComputationRunner> runners;
 
-    protected final Codec<Record> codec;
+    protected final Codec<Record> inputCodec;
+
+    protected final Codec<Record> outputCodec;
 
     protected ExecutorService threadPool;
 
     public ComputationPool(Supplier<Computation> supplier, ComputationMetadataMapping metadata,
-            List<List<LogPartition>> defaultAssignments, LogManager manager, Codec<Record> codec) {
+            List<List<LogPartition>> defaultAssignments, LogManager manager, Codec<Record> inputCodec,
+            Codec<Record> outputCodec) {
         this.supplier = supplier;
         this.manager = manager;
         this.metadata = metadata;
         this.threads = defaultAssignments.size();
-        this.codec = codec;
+        this.inputCodec = inputCodec;
+        this.outputCodec = outputCodec;
         this.defaultAssignments = defaultAssignments;
         this.runners = new ArrayList<>(threads);
     }
@@ -85,7 +89,8 @@ public class ComputationPool {
         log.info(metadata.name() + ": Starting pool");
         threadPool = newFixedThreadPool(threads, new NamedThreadFactory(metadata.name() + "Pool"));
         defaultAssignments.forEach(assignments -> {
-            ComputationRunner runner = new ComputationRunner(supplier, metadata, assignments, manager, codec);
+            ComputationRunner runner = new ComputationRunner(supplier, metadata, assignments, manager, inputCodec,
+                    outputCodec);
             threadPool.submit(runner);
             runners.add(runner);
         });

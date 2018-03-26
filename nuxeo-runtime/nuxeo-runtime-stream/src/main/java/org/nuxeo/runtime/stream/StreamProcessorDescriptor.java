@@ -41,8 +41,6 @@ import org.nuxeo.runtime.codec.CodecService;
 public class StreamProcessorDescriptor {
     public static final Integer DEFAULT_CONCURRENCY = 4;
 
-    public static final String DEFAULT_CODEC = "java";
-
     @XNode("@name")
     public String name;
 
@@ -59,7 +57,7 @@ public class StreamProcessorDescriptor {
     public Integer defaultPartitions = DEFAULT_CONCURRENCY;
 
     @XNode("@defaultCodec")
-    public String defaultCodec = DEFAULT_CODEC;
+    public String defaultCodec;
 
     @XNodeMap(value = "option", key = "@name", type = HashMap.class, componentType = String.class)
     public Map<String, String> options = new HashMap<>();

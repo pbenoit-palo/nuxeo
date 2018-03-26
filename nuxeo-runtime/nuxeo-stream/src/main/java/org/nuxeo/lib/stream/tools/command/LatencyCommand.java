@@ -81,7 +81,7 @@ public class LatencyCommand extends Command {
     }
 
     protected void latency(LogManager manager, String name, Codec<Record> codec) {
-        System.out.println("## Log: " + name + " partitions: " + manager.getAppender(name).size());
+        System.out.println("## Log: " + name + " partitions: " + manager.size(name));
         List<String> consumers = manager.listConsumerGroups(name);
         if (verbose && consumers.isEmpty()) {
             // add a fake group to get info on end positions

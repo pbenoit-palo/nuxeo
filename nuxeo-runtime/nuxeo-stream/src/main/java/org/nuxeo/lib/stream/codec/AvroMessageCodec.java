@@ -34,6 +34,8 @@ import org.apache.avro.reflect.ReflectData;
  * @since 10.2
  */
 public class AvroMessageCodec<T> implements Codec<T> {
+    public static final String NAME = "avro";
+
     protected final Class<T> messageClass;
 
     protected Schema schema;
@@ -51,6 +53,11 @@ public class AvroMessageCodec<T> implements Codec<T> {
 
     public AvroMessageCodec(Class<T> messageClass) {
         this(messageClass, null);
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Override

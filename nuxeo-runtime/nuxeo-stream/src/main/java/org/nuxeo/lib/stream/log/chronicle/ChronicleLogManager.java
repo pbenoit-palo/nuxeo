@@ -109,6 +109,11 @@ public class ChronicleLogManager extends AbstractLogManager {
     }
 
     @Override
+    protected int getSize(String name) {
+        return ChronicleLogAppender.partitions(basePath.resolve(name).toFile());
+    }
+
+    @Override
     public boolean delete(String name) {
         Path path = basePath.resolve(name);
         if (Files.isDirectory(path)) {
@@ -121,7 +126,6 @@ public class ChronicleLogManager extends AbstractLogManager {
     protected LogLag getLagForPartition(String name, int partition, String group) {
         long pos;
         Path path = basePath.resolve(name);
-        ChronicleLogAppender appender = (ChronicleLogAppender) getAppender(name);
         if (!ChronicleLogOffsetTracker.exists(path, group)) {
             pos = 0;
         } else {
@@ -130,20 +134,23 @@ public class ChronicleLogManager extends AbstractLogManager {
                 pos = offsetTracker.readLastCommittedOffset();
             }
         }
-        // this trigger an acquire/release on cycle
-        long end = appender.endOffset(partition);
-        if (pos == 0) {
-            pos = appender.firstOffset(partition);
+        try (ChronicleLogAppender<Externalizable> appender = ChronicleLogAppender.open(null,
+                basePath.resolve(name).toFile())) {
+            // this trigger an acquire/release on cycle
+            long end = appender.endOffset(partition);
+            if (pos == 0) {
+                pos = appender.firstOffset(partition);
+            }
+            long lag = appender.countMessages(partition, pos, end);
+            long firstOffset = appender.firstOffset(partition);
+            long endMessages = appender.countMessages(partition, firstOffset, end);
+            return new LogLag(pos, end, lag, endMessages);
         }
-        long lag = appender.countMessages(partition, pos, end);
-        long firstOffset = appender.firstOffset(partition);
-        long endMessages = appender.countMessages(partition, firstOffset, end);
-        return new LogLag(pos, end, lag, endMessages);
     }
 
     @Override
     public List<LogLag> getLagPerPartition(String name, String group) {
-        int size = getAppender(name).size();
+        int size = size(name);
         List<LogLag> ret = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             ret.add(getLagForPartition(name, i, group));

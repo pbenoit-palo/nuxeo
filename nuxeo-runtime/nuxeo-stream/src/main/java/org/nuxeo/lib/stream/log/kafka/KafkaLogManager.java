@@ -30,6 +30,7 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.utils.Bytes;
@@ -92,6 +93,11 @@ public class KafkaLogManager extends AbstractLogManager {
     @Override
     public void create(String name, int size) {
         kUtils.createTopic(ns.getTopicName(name), size, defaultReplicationFactor);
+    }
+
+    @Override
+    protected int getSize(String name) {
+        return kUtils.partitions(ns.getTopicName(name));
     }
 
     @Override

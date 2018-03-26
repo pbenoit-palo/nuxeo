@@ -19,6 +19,7 @@
 package org.nuxeo.lib.stream.codec;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import org.apache.avro.Schema;
 import org.apache.avro.message.RawMessageDecoder;
@@ -31,6 +32,8 @@ import org.apache.avro.reflect.ReflectData;
  * @since 10.2
  */
 public class AvroBinaryCodec<T> implements Codec<T> {
+    public static final String NAME = "avroBinary";
+
     protected final Class<T> messageClass;
 
     protected Schema schema;
@@ -44,6 +47,11 @@ public class AvroBinaryCodec<T> implements Codec<T> {
         schema = ReflectData.get().getSchema(messageClass);
         encoder = new RawMessageEncoder<>(ReflectData.get(), schema);
         decoder = new RawMessageDecoder<>(ReflectData.get(), schema);
+    }
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
     @Override

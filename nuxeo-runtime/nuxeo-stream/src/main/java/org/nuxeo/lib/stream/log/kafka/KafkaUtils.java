@@ -173,21 +173,25 @@ public class KafkaUtils implements AutoCloseable {
     }
 
     public boolean topicExists(String topic) {
+        return partitions(topic) > 0;
+    }
+
+    public int partitions(String topic) {
         try {
             TopicDescription desc = getNewAdminClient().describeTopics(Collections.singletonList(topic))
-                                                       .values()
-                                                       .get(topic)
-                                                       .get();
+                    .values()
+                    .get(topic)
+                    .get();
             if (log.isDebugEnabled()) {
                 log.debug(String.format("Topic %s exists: %s", topic, desc));
             }
-            return true;
+            return desc.partitions().size();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof UnknownTopicOrPartitionException) {
-                return false;
+                return -1;
             }
             throw new RuntimeException(e);
         }

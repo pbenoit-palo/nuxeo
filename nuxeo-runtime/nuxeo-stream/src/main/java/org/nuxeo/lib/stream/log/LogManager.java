@@ -53,6 +53,13 @@ public interface LogManager extends AutoCloseable {
     boolean delete(String name);
 
     /**
+     * Returns the number of partition of a Log.
+     *
+     * @since 10.2
+     */
+    int size(String name);
+
+    /**
      * Get an appender for the Log named {@code name}, use {@code codec} to encode records. An appender is thread safe.
      *
      * @since 10.2
@@ -117,9 +124,8 @@ public interface LogManager extends AutoCloseable {
      * @since 10.2
      */
     default <M extends Externalizable> LogTailer<M> createTailer(String group, String name, Codec<M> codec) {
-        int size = getAppender(name, codec).size();
         return createTailer(group,
-                IntStream.range(0, size).boxed().map(partition -> new LogPartition(name, partition)).collect(
+                IntStream.range(0, size(name)).boxed().map(partition -> new LogPartition(name, partition)).collect(
                         Collectors.toList()),
                 codec);
     }

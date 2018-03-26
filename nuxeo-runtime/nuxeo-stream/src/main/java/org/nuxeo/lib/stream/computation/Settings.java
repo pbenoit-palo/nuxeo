@@ -86,17 +86,17 @@ public class Settings {
      *
      * @since 10.2
      */
-    public Codec<Record> getCodec(String streamName) {
-        return codecs.getOrDefault(streamName, defaultCodec);
+    public Settings setCodec(String streamName, Codec<Record> codec) {
+        codecs.put(streamName, codec);
+        return this;
     }
 
     /**
-     * Set the codec for a stream
+     * Get a codec for a stream
      *
      * @since 10.2
      */
-    public void setCodec(String streamName, Codec<Record> codec) {
-        codecs.put(streamName, codec);
+    public Codec<Record> getCodec(String streamName) {
+        return codecs.getOrDefault(streamName, defaultCodec);
     }
-
 }

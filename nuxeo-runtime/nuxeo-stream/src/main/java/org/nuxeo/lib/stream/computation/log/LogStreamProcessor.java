@@ -22,7 +22,9 @@ import static java.lang.Math.min;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nuxeo.lib.stream.codec.Codec;
 import org.nuxeo.lib.stream.computation.ComputationMetadataMapping;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.computation.Settings;
@@ -184,8 +187,24 @@ public class LogStreamProcessor implements StreamProcessor {
         return topology.metadataList()
                        .stream()
                        .map(meta -> new ComputationPool(topology.getSupplier(meta.name()), meta,
-                               getDefaultAssignments(meta), manager, settings.getCodec(meta.name())))
+                               getDefaultAssignments(meta), manager,
+                               getCodecForStreams(meta.name(), meta.inputStreams()),
+                               getCodecForStreams(meta.name(), meta.outputStreams())))
                        .collect(Collectors.toList());
+    }
+
+    protected Codec<Record> getCodecForStreams(String name, Set<String> streams) {
+        Codec<Record> codec = null;
+        Set<String> codecNames = new HashSet<>();
+        for (String stream : streams) {
+            codec = settings.getCodec(stream);
+            codecNames.add(codec == null ? "legacy" : codec.getName());
+        }
+        if (codecNames.size() > 1) {
+            throw new IllegalArgumentException(String.format("Different codecs for computation %s: %s", name,
+                    Arrays.toString(codecNames.toArray())));
+        }
+        return codec;
     }
 
     protected List<List<LogPartition>> getDefaultAssignments(ComputationMetadataMapping meta) {

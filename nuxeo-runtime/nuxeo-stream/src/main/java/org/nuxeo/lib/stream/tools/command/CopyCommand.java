@@ -83,7 +83,7 @@ public class CopyCommand extends Command {
             System.err.println("destination log already exists: " + dest);
             return false;
         }
-        manager.createIfNotExists(dest, manager.getAppender(src).size());
+        manager.createIfNotExists(dest, manager.size(src));
         LogAppender<Record> appender = manager.getAppender(dest);
         try (LogTailer<Record> tailer = manager.createTailer(group, src)) {
             while (true) {

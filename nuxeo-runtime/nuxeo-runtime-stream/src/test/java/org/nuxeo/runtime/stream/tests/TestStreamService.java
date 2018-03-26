@@ -69,7 +69,7 @@ public class TestStreamService {
         assertNotNull(manager);
 
         manager.exists("input");
-        assertEquals(1, manager.getAppender("input").size());
+        assertEquals(1, manager.size("input"));
     }
 
     @Test

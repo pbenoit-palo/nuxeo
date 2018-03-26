@@ -81,7 +81,7 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
             if (!exists(basePath)) {
                 throw new IllegalArgumentException("Cannot open Chronicle Queues, invalid path: " + basePath);
             }
-            this.nbPartitions = findNbQueues(basePath);
+            this.nbPartitions = partitions(basePath);
         } else {
             // create
             if (size > MAX_PARTITIONS) {
@@ -282,7 +282,7 @@ public class ChronicleLogAppender<M extends Externalizable> implements Closeable
         closed = true;
     }
 
-    protected int findNbQueues(File basePath) {
+    public static int partitions(File basePath) {
         int ret;
         try (Stream<Path> paths = Files.list(basePath.toPath())) {
             ret = (int) paths.filter(

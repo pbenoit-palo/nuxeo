@@ -19,7 +19,9 @@
 package org.nuxeo.lib.stream.tests.computation;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -417,10 +419,73 @@ public abstract class TestStreamProcessor {
         }
     }
 
+    @Test
+    public void testInvalidProcessorWithMultipleInputCodec() throws Exception {
+        Topology topology = Topology.builder()
+                                    .addComputation(() -> new ComputationForward("C1", 2, 1),
+                                            Arrays.asList("i1:input-json", "i2:input-avro", "o1:output-avro"))
+                                    .build();
+        Settings settings = new Settings(1, 1).setCodec("input-json", new AvroJsonCodec<>(Record.class))
+                                              .setCodec("input-java", new SerializableCodec<>())
+                                              .setCodec("output-avro", new AvroMessageCodec<>(Record.class));
+        try (LogManager manager = getLogManager()) {
+            StreamProcessor processor = getStreamProcessor(manager);
+            try {
+                processor.init(topology, settings).start();
+                fail("It should not be possible to read from input streams with different encoding");
+            } catch (IllegalArgumentException e) {
+                // expected
+            }
+        }
+    }
+
+    @Test
+    public void testInvalidProcessorWithMultipleOuptutCodec() throws Exception {
+        Topology topology = Topology.builder()
+                                    .addComputation(() -> new ComputationForward("C1", 1, 2),
+                                            Arrays.asList("i1:input", "o1:output-avro", "o2:output-json"))
+                                    .build();
+        Settings settings = new Settings(1, 1, new AvroJsonCodec<>(Record.class)).setCodec("output-avro",
+                new AvroMessageCodec<>(Record.class));
+        try (LogManager manager = getLogManager()) {
+            StreamProcessor processor = getStreamProcessor(manager);
+            try {
+                processor.init(topology, settings).start();
+                fail("It should not be possible to write to output streams with different encoding");
+            } catch (IllegalArgumentException e) {
+                // expected
+            }
+        }
+    }
+
+    @Test
+    public void testProcessorWithDifferentInputOutputCodec() throws Exception {
+        Topology topology = Topology.builder()
+                                    .addComputation(() -> new ComputationForward("C1", 1, 1),
+                                            Arrays.asList("i1:input-json", "o1:output-avro"))
+                                    .build();
+        Settings settings = new Settings(1, 1).setCodec("input-json", new AvroJsonCodec<>(Record.class))
+                                              .setCodec("output-avro", new AvroMessageCodec<>(Record.class));
+        try (LogManager manager = getLogManager()) {
+            StreamProcessor processor = getStreamProcessor(manager);
+            processor.init(topology, settings).start();
+            assertTrue(processor.waitForAssignments(Duration.ofSeconds(10)));
+            // write some input as json
+            manager.getAppender("input-json", new AvroJsonCodec<>(Record.class)).append(0, Record.of("key", "value".getBytes("UTF-8")));
+            assertTrue(processor.drainAndStop(Duration.ofSeconds(100)));
+            // read output using avro codec
+            try (LogTailer<Record> tailer = manager.createTailer("test", "output-avro",
+                    new AvroMessageCodec<>(Record.class))) {
+                assertEquals("avro", tailer.getCodec().getName());
+                assertNotNull(tailer.read(Duration.ofSeconds(1)));
+            }
+        }
+    }
+
     // ---------------------------------
     // helpers
     protected int readOutputCounter(LogManager manager) throws InterruptedException {
-        int partitions = manager.getAppender(OUTPUT_STREAM, codec).size();
+        int partitions = manager.size(OUTPUT_STREAM);
         int ret = 0;
         for (int i = 0; i < partitions; i++) {
             ret += readCounterFromPartition(manager, OUTPUT_STREAM, i);
@@ -443,7 +508,7 @@ public abstract class TestStreamProcessor {
 
     protected int countRecordIn(LogManager manager, String stream) throws Exception {
         int ret = 0;
-        for (int i = 0; i < manager.getAppender(stream, codec).size(); i++) {
+        for (int i = 0; i < manager.size(stream); i++) {
             ret += countRecordInPartition(manager, stream, i);
         }
         return ret;

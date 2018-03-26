@@ -35,6 +35,13 @@ import java.io.Serializable;
  */
 public class SerializableCodec<T extends Serializable> implements Codec<T> {
 
+    public static final String NAME = "java";
+
+    @Override
+    public String getName() {
+        return NAME;
+    }
+
     @Override
     public byte[] encode(T message) {
         ObjectOutput out;

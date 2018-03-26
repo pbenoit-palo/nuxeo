@@ -26,6 +26,11 @@ package org.nuxeo.lib.stream.codec;
 public interface Codec<T> {
 
     /**
+     * Returns the codec name
+     */
+    String getName();
+
+    /**
      * Encode the message into a byte array
      */
     byte[] encode(T message);
