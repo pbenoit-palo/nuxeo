@@ -17,20 +17,30 @@
 
 package org.nuxeo.ecm.platform.preview.helper;
 
+import org.nuxeo.ecm.core.api.DocumentLocation;
 import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.IdRef;
 import org.nuxeo.ecm.core.api.blobholder.BlobHolder;
 import org.nuxeo.ecm.core.api.blobholder.DocumentBlobHolder;
+import org.nuxeo.ecm.core.api.impl.DocumentLocationImpl;
 import org.nuxeo.ecm.platform.preview.adapter.base.ConverterBasedHtmlPreviewAdapter;
 import org.nuxeo.ecm.platform.preview.api.HtmlPreviewAdapter;
 import org.nuxeo.ecm.platform.preview.api.PreviewException;
+import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PreviewHelper {
 
     public static final String REST_API_PREFIX = "site/api/v1";
+
+    public static final Pattern PREVIEW_PATTERN = Pattern.compile(REST_API_PREFIX + "repo/(.+)/id/(.+)/@preview");
 
     protected static final Map<String, Boolean> hasPreviewByType = new ConcurrentHashMap<>();
 
@@ -50,6 +60,21 @@ public class PreviewHelper {
             sj.add("@blob").add(xpath);
         }
         return sj.add("@preview").toString();
+    }
+
+    public static DocumentLocation getDocumentLocation(String uri) {
+        String ctxPath = VirtualHostHelper.getContextPathProperty() + "/";
+        try {
+            String path = new URI(uri).getPath();
+            path = path.substring(0, path.lastIndexOf(ctxPath));
+            Matcher m = PREVIEW_PATTERN.matcher(path);
+            if (m.matches()) {
+                return new DocumentLocationImpl(m.group(1),  new IdRef(m.group(2)));
+            }
+        } catch (URISyntaxException e) {
+            //
+        }
+        return null;
     }
 
     public static boolean typeSupportsPreview(DocumentModel doc) {

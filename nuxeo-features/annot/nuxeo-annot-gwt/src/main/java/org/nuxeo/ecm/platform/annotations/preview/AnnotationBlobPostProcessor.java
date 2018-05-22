@@ -27,7 +27,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.jboss.seam.international.LocaleSelector;
 import org.nuxeo.ecm.core.api.Blob;
 import org.nuxeo.ecm.core.api.Blobs;
 import org.nuxeo.ecm.platform.preview.adapter.BlobPostProcessor;
@@ -41,8 +40,6 @@ public class AnnotationBlobPostProcessor implements BlobPostProcessor {
     private static final Log log = LogFactory.getLog(AnnotationBlobPostProcessor.class);
 
     protected static final int BUFFER_SIZE = 4096 * 16;
-
-    protected static final String GWT_LOCALE = "<meta name=\"gwt:property\" content=\"locale=%s\" />";
 
     protected static final String ANNOTATION_MODULE_JS = "<script type=\"text/javascript\" src='"
             + VirtualHostHelper.getContextPathProperty()
@@ -96,15 +93,11 @@ public class AnnotationBlobPostProcessor implements BlobPostProcessor {
     }
 
     protected String addAnnotationModule(String blob) {
-        LocaleSelector localeSelector = LocaleSelector.instance();
         StringBuilder sb = new StringBuilder();
         Matcher m = headPattern.matcher(blob);
         if (m.matches()) {
             sb.append(m.group(1));
             sb.append(m.group(2));
-            if (localeSelector != null) {
-                sb.append(String.format(GWT_LOCALE, localeSelector.getLocaleString()));
-            }
             sb.append(INTERNET_EXPLORER_RANGE_JS);
             sb.append(ANNOTATION_MODULE_JS);
             sb.append(m.group(3));
@@ -114,9 +107,6 @@ public class AnnotationBlobPostProcessor implements BlobPostProcessor {
                 sb.append(m.group(1));
                 sb.append(m.group(2));
                 sb.append("<head>");
-                if (localeSelector != null) {
-                    sb.append(String.format(GWT_LOCALE, localeSelector.getLocaleString()));
-                }
                 sb.append(INTERNET_EXPLORER_RANGE_JS);
                 sb.append(ANNOTATION_MODULE_JS);
                 sb.append("</head>");

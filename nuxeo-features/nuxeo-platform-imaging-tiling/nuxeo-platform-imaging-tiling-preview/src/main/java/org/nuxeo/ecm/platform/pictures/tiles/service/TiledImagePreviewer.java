@@ -34,8 +34,8 @@ import org.nuxeo.ecm.platform.picture.api.ImageInfo;
 import org.nuxeo.ecm.platform.picture.api.ImagingService;
 import org.nuxeo.ecm.platform.pictures.tiles.gwt.client.TilingPreviewConstant;
 import org.nuxeo.ecm.platform.preview.adapter.AbstractPreviewer;
-import org.nuxeo.ecm.platform.preview.adapter.ImagePreviewer;
 import org.nuxeo.ecm.platform.preview.adapter.MimeTypePreviewer;
+import org.nuxeo.ecm.platform.preview.adapter.PlainImagePreviewer;
 import org.nuxeo.ecm.platform.preview.api.PreviewException;
 import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
 import org.nuxeo.runtime.api.Framework;
@@ -72,7 +72,7 @@ public class TiledImagePreviewer extends AbstractPreviewer implements MimeTypePr
             return blobResults;
         }
 
-        return new ImagePreviewer().getPreview(blob, dm);
+        return new PlainImagePreviewer().getPreview(blob, dm);
     }
 
     protected boolean useTiling(Blob blob) {

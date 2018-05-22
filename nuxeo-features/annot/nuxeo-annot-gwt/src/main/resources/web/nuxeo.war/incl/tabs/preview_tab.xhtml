@@ -3,9 +3,8 @@
   xmlns:h="http://java.sun.com/jsf/html"
   xmlns:nxu="http://nuxeo.org/nxweb/util">
 
-  <!-- NXP-18755: disabled annotations to allow mimetype previewers -->
   <nxu:set var="annotationsEnabled"
-    value="false"
+    value="#{annotationsActions.isAnnotationsEnabled(currentDocument)}"
     cache="true">
 
     <h:panelGroup rendered="#{annotationsEnabled}">

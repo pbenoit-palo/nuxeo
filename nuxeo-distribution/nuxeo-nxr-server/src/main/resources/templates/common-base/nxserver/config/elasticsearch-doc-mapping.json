@@ -151,6 +151,9 @@
           "type": "text"
         }
       }
-    }
+    },
+    "relation:targetString" : {
+      "type" : "text"
+    },
   }
 }

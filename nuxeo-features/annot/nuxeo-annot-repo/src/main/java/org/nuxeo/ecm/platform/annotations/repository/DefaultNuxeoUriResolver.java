@@ -31,6 +31,7 @@ import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.DocumentRef;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.platform.annotations.api.UriResolver;
+import org.nuxeo.ecm.platform.preview.helper.PreviewHelper;
 import org.nuxeo.ecm.platform.url.api.DocumentView;
 import org.nuxeo.ecm.platform.url.api.DocumentViewCodecManager;
 import org.nuxeo.ecm.platform.web.common.vh.VirtualHostHelper;
@@ -77,10 +78,14 @@ public class DefaultNuxeoUriResolver implements UriResolver {
             return uri;
         }
         DocumentView view = viewCodecManager.getDocumentViewFromUrl(uri.toString(), true, getBaseUrl(uri));
-        if (view == null) {// not a nuxeo uri
-            return uri;
+        if (view != null) {// not a nuxeo uri
+            return getGraphURIFromDocumentView(view);
         }
-        return getGraphURIFromDocumentView(view);
+        DocumentLocation docLoc = PreviewHelper.getDocumentLocation(uri.toString());
+        if (docLoc != null) {
+            return translator.getNuxeoUrn(docLoc.getServerName(), docLoc.getIdRef().toString());
+        }
+        return uri;
     }
 
     protected URI getGraphURIFromDocumentView(DocumentView view) {
