@@ -170,3 +170,9 @@ nuxeo.stream.audit.batch.threshold.ms=500
 nuxeo.stream.pubsub.log.config=pubsub
 nuxeo.stream.pubsub.log.name=pubsub
 
+# Stream DocumentSet
+nuxeo.stream.documentset.log.config=documentset
+
+# Key/Value store for DocumentSet
+nuxeo.keyvalue.store.documentset=documentset
+

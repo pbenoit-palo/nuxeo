@@ -28,6 +28,12 @@ import org.nuxeo.ecm.core.documentset.DocumentSet.State;
  */
 public interface DocumentSetService {
 
+    String DOCUMENTSET_LOG_CONFIG_PROP = "nuxeo.stream.documentset.log.config";
+
+    String DEFAULT_DOCUMENTSET_LOG_CONFIG = "documentset";
+
+    String DOCUMENTSET_STORE_ID = "documentset";
+
     /**
      * Creates a document set from the given NXQL query.
      * 
