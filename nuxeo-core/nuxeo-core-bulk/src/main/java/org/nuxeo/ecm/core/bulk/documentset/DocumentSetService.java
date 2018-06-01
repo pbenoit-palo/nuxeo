@@ -17,9 +17,9 @@
  *     Funsho David
  */
 
-package org.nuxeo.ecm.core.documentset;
+package org.nuxeo.ecm.core.bulk.documentset;
 
-import org.nuxeo.ecm.core.documentset.DocumentSet.State;
+import org.nuxeo.ecm.core.bulk.documentset.DocumentSet.State;
 
 /**
  * API to manage document sets.

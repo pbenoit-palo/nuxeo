@@ -17,7 +17,7 @@
  *     Funsho David
  */
 
-package org.nuxeo.ecm.core.documentset;
+package org.nuxeo.ecm.core.bulk.documentset;
 
 import java.io.Serializable;
 import java.util.Calendar;
