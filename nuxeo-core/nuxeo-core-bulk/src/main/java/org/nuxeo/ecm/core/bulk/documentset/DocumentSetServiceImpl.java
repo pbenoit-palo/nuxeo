@@ -98,7 +98,7 @@ public class DocumentSetServiceImpl implements DocumentSetService {
     }
 
     @Override
-    public DocumentSet getDocumentSet(String documentSetId) {
+    public DocumentSet getDocumentSet(UUID documentSetId) {
         return null;
     }
 

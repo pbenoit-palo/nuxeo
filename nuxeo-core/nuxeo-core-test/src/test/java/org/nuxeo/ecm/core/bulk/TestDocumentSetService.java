@@ -52,9 +52,9 @@ public class TestDocumentSetService {
     public void testCreateDocumentSet() {
         DocumentModel model = session.getDocument(new PathRef("/default-domain/workspaces/test"));
         String nxsql = String.format("SELECT * from Document where ecm:parentId=‘%s’", model.getId());
-        String id = service.createDocumentSet(nxsql);
-        Assert.assertNotNull(id);
-        DocumentSet set = service.getDocumentSet(id);
+        DocumentSet set = service.createDocumentSet(nxsql);
+        Assert.assertNotNull(set);
+        set = service.getDocumentSet(set.getUUID());
         Assert.assertNotNull(set);
 
     }

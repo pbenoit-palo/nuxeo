@@ -19,6 +19,8 @@
 
 package org.nuxeo.ecm.core.bulk.documentset;
 
+import java.util.UUID;
+
 /**
  * API to manage document sets.
  * 
@@ -47,5 +49,5 @@ public interface DocumentSetService {
      * @param documentSetId the document set id
      * @return the documentSet
      */
-    DocumentSet getDocumentSet(String documentSetId);
+    DocumentSet getDocumentSet(UUID documentSetId);
 }
