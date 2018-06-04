@@ -20,7 +20,10 @@
 package org.nuxeo.ecm.core.bulk.documentset;
 
 import java.io.Serializable;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.UUID;
 
 /**
  * Document set object.
@@ -38,34 +41,55 @@ public class DocumentSet implements Serializable {
         SCHEDULED, BUILDING, COMPLETED
     }
 
-    protected String id;
+    protected UUID uuid;
+
+    protected String query;
 
     protected State state;
 
     protected String repository;
 
-    protected Calendar creationDate;
+    protected ZonedDateTime creationDate;
 
-    protected long lowerOffset;
+    protected Long lowerOffset;
 
-    protected long upperOffset;
+    protected Long upperOffset;
 
     /**
      * Gets document set id.
      * 
      * @return the id
      */
-    public String getId() {
-        return id;
+    public UUID getUUID() {
+        return uuid;
     }
 
     /**
      * Sets document set id.
      *
-     * @param id the id
+     * @param uuid the id
      */
-    public void setId(String id) {
-        this.id = id;
+    protected void setUUID(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    /**
+     * Gets document set NXQL query.
+     *
+     * @return the NXQL query
+     */
+    public String getQuery() {
+        return query;
+    }
+
+
+    /**
+     * Sets document set NXQL query.
+     *
+     * @param query the NXQL query
+     */
+    public void setQuery(String query) {
+        this.query = query;
     }
 
     /**
@@ -106,19 +130,30 @@ public class DocumentSet implements Serializable {
 
     /**
      * Gets document set creation date.
-     * 
+     *
      * @return the creation date
      */
-    public Calendar getCreationDate() {
+    public ZonedDateTime getCreationDate() {
         return creationDate;
     }
 
     /**
-     * Sets document set creation date.
+     * Gets document set creation date as a {@link Calendar}.
      * 
+     * @return the creation date
+     */
+    public Calendar getCreationDateCal() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(Date.from(creationDate.toInstant()));
+        return cal;
+    }
+
+    /**
+     * Sets document set creation date.
+     *
      * @param creationDate the creation date
      */
-    public void setCreationDate(Calendar creationDate) {
+    protected void setCreationDate(ZonedDateTime creationDate) {
         this.creationDate = creationDate;
     }
 
@@ -127,7 +162,7 @@ public class DocumentSet implements Serializable {
      * 
      * @return the lower offset
      */
-    public long getLowerOffset() {
+    public Long getLowerOffset() {
         return lowerOffset;
     }
 
@@ -145,7 +180,7 @@ public class DocumentSet implements Serializable {
      *
      * @return the upper offset
      */
-    public long getUpperOffset() {
+    public Long getUpperOffset() {
         return upperOffset;
     }
 

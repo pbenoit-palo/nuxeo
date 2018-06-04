@@ -36,11 +36,12 @@ public interface DocumentSetService {
 
     /**
      * Creates a document set from the given NXQL query.
-     * 
+     *
+     * @param repository the repository
      * @param nxql the query
-     * @return the newly created document set id
+     * @return the newly created document set
      */
-    String createDocumentSet(String nxql);
+    DocumentSet createDocumentSet(String repository, String nxql);
 
     /**
      * Gets document set state from its id. Possible values are SCHEDULED, BUILDING or COMPLETED.

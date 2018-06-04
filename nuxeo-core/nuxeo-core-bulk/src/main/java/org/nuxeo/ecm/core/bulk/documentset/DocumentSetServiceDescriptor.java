@@ -18,6 +18,8 @@
  */
 package org.nuxeo.ecm.core.bulk.documentset;
 
+import java.io.Serializable;
+
 import org.nuxeo.common.xmap.annotation.XNode;
 import org.nuxeo.common.xmap.annotation.XObject;
 
@@ -27,7 +29,7 @@ import org.nuxeo.common.xmap.annotation.XObject;
  * @since 10.2
  */
 @XObject("set")
-public class DocumentSetServiceDescriptor {
+public class DocumentSetServiceDescriptor implements Serializable {
 
     @XNode("@class")
     public Class<? extends DocumentSetService> clazz;
