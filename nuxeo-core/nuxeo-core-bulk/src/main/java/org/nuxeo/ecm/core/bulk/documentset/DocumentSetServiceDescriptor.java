@@ -32,4 +32,10 @@ public class DocumentSetServiceDescriptor {
     @XNode("@class")
     public Class<? extends DocumentSetService> clazz;
 
+    @XNode("logManager")
+    public String logManager;
+
+    @XNode("kvStore")
+    public String kvStore;
+
 }
