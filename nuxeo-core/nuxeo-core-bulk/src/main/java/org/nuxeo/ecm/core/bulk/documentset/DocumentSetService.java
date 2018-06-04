@@ -19,8 +19,6 @@
 
 package org.nuxeo.ecm.core.bulk.documentset;
 
-import org.nuxeo.ecm.core.bulk.documentset.DocumentSet.State;
-
 /**
  * API to manage document sets.
  * 
@@ -44,10 +42,10 @@ public interface DocumentSetService {
     DocumentSet createDocumentSet(String repository, String nxql);
 
     /**
-     * Gets document set state from its id. Possible values are SCHEDULED, BUILDING or COMPLETED.
+     * Gets document set from its id.
      * 
      * @param documentSetId the document set id
-     * @return the state
+     * @return the documentSet
      */
-    State getDocumentSetState(String documentSetId);
+    DocumentSet getDocumentSet(String documentSetId);
 }

@@ -21,8 +21,10 @@ package org.nuxeo.ecm.core.bulk;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.bulk.documentset.DocumentSetService;
 import org.nuxeo.ecm.core.bulk.documentset.DocumentSetServiceDescriptor;
+import org.nuxeo.ecm.core.bulk.documentset.DocumentSetServiceImpl;
 import org.nuxeo.runtime.RuntimeServiceException;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;
@@ -35,7 +37,7 @@ import org.nuxeo.runtime.model.DefaultComponent;
  */
 public class BulkComponent extends DefaultComponent {
 
-    public static final String SET_XP = "set";
+    public static final String CONFIGURATION_XP = "configuration";
 
     protected Queue<DocumentSetServiceDescriptor> documentSetServiceRegistry = new LinkedList<>();
 
@@ -44,7 +46,7 @@ public class BulkComponent extends DefaultComponent {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getAdapter(Class<T> adapter) {
-        if (adapter.isAssignableFrom(documentSetService.getClass())) {
+        if (documentSetService != null && adapter.isAssignableFrom(documentSetService.getClass())) {
             return (T) documentSetService;
         }
         return null;
@@ -52,23 +54,19 @@ public class BulkComponent extends DefaultComponent {
 
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
-        if (SET_XP.equals(extensionPoint)) {
+        if (CONFIGURATION_XP.equals(extensionPoint)) {
             documentSetServiceRegistry.add((DocumentSetServiceDescriptor) contribution);
         } else {
             throw new RuntimeServiceException("Unknown extension point: " + extensionPoint);
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void start(ComponentContext context) {
-        try {
-            DocumentSetServiceDescriptor last = documentSetServiceRegistry.element();
-            Class<? extends DocumentSetService> clazz = last.clazz;
-            documentSetService = clazz.getConstructor().newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeServiceException(e);
+        if (documentSetServiceRegistry.isEmpty()) {
+            throw new NuxeoException("DocumentSetService must be configured through contribution");
         }
+        documentSetService = new DocumentSetServiceImpl(documentSetServiceRegistry.peek());
     }
 
     @Override
@@ -78,7 +76,7 @@ public class BulkComponent extends DefaultComponent {
 
     @Override
     public void unregisterContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
-        if (SET_XP.equals(extensionPoint)) {
+        if (CONFIGURATION_XP.equals(extensionPoint)) {
             documentSetServiceRegistry.remove(contribution);
         } else {
             throw new RuntimeServiceException("Unknown extension point: " + extensionPoint);

@@ -11,7 +11,7 @@
     <provide interface="org.nuxeo.ecm.core.bulk.documentset.DocumentSetService" />
   </service>
 
-  <extension-point name="set">
+  <extension-point name="configuration">
     <documentation>
       Allows to define the document set service implementation.
     </documentation>

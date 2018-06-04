@@ -16,25 +16,26 @@
  * Contributors:
  *     pierre
  */
-package org.nuxeo.ecm.core.bulk.documentset;
+package org.nuxeo.ecm.core.bulk;
 
-import java.io.Serializable;
-
-import org.nuxeo.common.xmap.annotation.XNode;
-import org.nuxeo.common.xmap.annotation.XObject;
+import org.nuxeo.ecm.core.api.CoreSession;
+import org.nuxeo.ecm.core.api.DocumentModel;
+import org.nuxeo.ecm.core.api.PathRef;
+import org.nuxeo.ecm.core.test.DefaultRepositoryInit;
 
 /**
- * The Avro schema descriptor.
- *
  * @since 10.2
  */
-@XObject("set")
-public class DocumentSetServiceDescriptor implements Serializable {
+public class DocumentSetRepositoryInit extends DefaultRepositoryInit {
 
-    @XNode("logManager")
-    public String logManager;
+    private static final int SIZE = 10;
 
-    @XNode("kvStore")
-    public String kvStore;
-
+    @Override
+    public void populate(CoreSession session) {
+        super.populate(session);
+        DocumentModel test = session.getDocument(new PathRef("/default-domain/workspaces/test"));
+        for (int i = 0; i < SIZE; i++) {
+            session.createDocumentModel(test.getPathAsString(), "doc " + i, "ComplexDoc");
+        }
+    }
 }

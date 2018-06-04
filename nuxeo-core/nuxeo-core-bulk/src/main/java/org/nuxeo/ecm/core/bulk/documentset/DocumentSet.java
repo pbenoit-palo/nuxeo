@@ -37,7 +37,7 @@ public class DocumentSet implements Serializable {
     /**
      * Possible states of the document set.
      */
-    enum State {
+    public enum State {
         SCHEDULED, BUILDING, COMPLETED
     }
 

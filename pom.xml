@@ -456,7 +456,7 @@
         <scope>test</scope>
       </dependency>
       <dependency>
-        <groupId>org.nuxeo.ecm.cor</groupId>
+        <groupId>org.nuxeo.ecm.core</groupId>
         <artifactId>nuxeo-core-bulk</artifactId>
         <version>${nuxeo.core.version}</version>
       </dependency>

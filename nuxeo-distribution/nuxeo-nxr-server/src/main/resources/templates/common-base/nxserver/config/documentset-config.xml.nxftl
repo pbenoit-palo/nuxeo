@@ -28,9 +28,11 @@
   </extension>
   </#if>
 
-  <extension target="org.nuxeo.ecm.core.bulk" target="set">
-    <logManager>${nuxeo.stream.documentset.log.config}</logManager>
-    <kvStore>${nuxeo.keyvalue.store.documentset}</kvStore>
+  <extension target="org.nuxeo.ecm.core.bulk" target="configuration">
+    <set>
+      <logManager>${nuxeo.stream.documentset.log.config}</logManager>
+      <kvStore>${nuxeo.keyvalue.store.documentset}</kvStore>
+    </set>
   </extension>
 
 </component>

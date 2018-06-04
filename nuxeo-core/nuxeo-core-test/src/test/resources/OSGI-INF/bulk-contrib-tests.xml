@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<component name="org.nuxeo.ecm.core.bulk.tests" version="1.0.0">
+
+  <extension target="org.nuxeo.runtime.kv.KeyValueService" point="configuration">
+    <store name="testBulkKV" class="org.nuxeo.runtime.kv.MemKeyValueStore" />
+  </extension>
+
+  <extension point="logConfig" target="org.nuxeo.runtime.stream.service">
+    <logConfig name="testBulkLog" type="kafka">
+      <option name="config">default</option>
+    </logConfig>
+  </extension>
+
+  <extension target="org.nuxeo.ecm.core.bulk" point="configuration">
+    <set>
+      <logManager>testBulkLog</logManager>
+      <kvStore>testBulkKV</kvStore>
+    </set>
+  </extension>
+
+</component>
+
