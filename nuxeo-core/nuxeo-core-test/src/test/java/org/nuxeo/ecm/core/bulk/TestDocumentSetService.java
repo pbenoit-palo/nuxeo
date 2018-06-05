@@ -26,8 +26,8 @@ import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.CoreSession;
 import org.nuxeo.ecm.core.api.DocumentModel;
 import org.nuxeo.ecm.core.api.PathRef;
-import org.nuxeo.ecm.core.bulk.documentset.DocumentSet;
-import org.nuxeo.ecm.core.bulk.documentset.DocumentSetService;
+import org.nuxeo.ecm.core.bulk.BulkStatus;
+import org.nuxeo.ecm.core.bulk.DocumentSetService;
 import org.nuxeo.ecm.core.test.CoreFeature;
 import org.nuxeo.ecm.core.test.annotations.RepositoryConfig;
 import org.nuxeo.runtime.test.runner.Deploy;
@@ -52,10 +52,10 @@ public class TestDocumentSetService {
     public void testCreateDocumentSet() {
         DocumentModel model = session.getDocument(new PathRef("/default-domain/workspaces/test"));
         String nxsql = String.format("SELECT * from Document where ecm:parentId=‘%s’", model.getId());
-        DocumentSet set = service.createDocumentSet(nxsql);
-        Assert.assertNotNull(set);
-        set = service.getDocumentSet(set.getUUID());
-        Assert.assertNotNull(set);
+        BulkStatus status = service.createDocumentSet(nxsql);
+        Assert.assertNotNull(status);
+        status = service.getDocumentSet(status.getUUID());
+        Assert.assertNotNull(status);
 
     }
 }
