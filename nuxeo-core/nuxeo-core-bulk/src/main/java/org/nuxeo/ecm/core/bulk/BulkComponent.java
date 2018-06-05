@@ -36,15 +36,15 @@ public class BulkComponent extends DefaultComponent {
 
     public static final String CONFIGURATION_XP = "configuration";
 
-    protected Queue<DocumentSetServiceDescriptor> documentSetServiceRegistry = new LinkedList<>();
+    protected Queue<BulkServiceDescriptor> configurationRegistry = new LinkedList<>();
 
-    protected DocumentSetService documentSetService;
+    protected BulkService bulkService;
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getAdapter(Class<T> adapter) {
-        if (documentSetService != null && adapter.isAssignableFrom(documentSetService.getClass())) {
-            return (T) documentSetService;
+        if (bulkService != null && adapter.isAssignableFrom(bulkService.getClass())) {
+            return (T) bulkService;
         }
         return null;
     }
@@ -52,7 +52,7 @@ public class BulkComponent extends DefaultComponent {
     @Override
     public void registerContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
         if (CONFIGURATION_XP.equals(extensionPoint)) {
-            documentSetServiceRegistry.add((DocumentSetServiceDescriptor) contribution);
+            configurationRegistry.add((BulkServiceDescriptor) contribution);
         } else {
             throw new RuntimeServiceException("Unknown extension point: " + extensionPoint);
         }
@@ -60,21 +60,21 @@ public class BulkComponent extends DefaultComponent {
 
     @Override
     public void start(ComponentContext context) {
-        if (documentSetServiceRegistry.isEmpty()) {
-            throw new NuxeoException("DocumentSetService must be configured through contribution");
+        if (configurationRegistry.isEmpty()) {
+            throw new NuxeoException("BulkService must be configured through contribution");
         }
-        documentSetService = new DocumentSetServiceImpl(documentSetServiceRegistry.peek());
+        bulkService = new BulkServiceImpl(configurationRegistry.peek());
     }
 
     @Override
     public void stop(ComponentContext context) {
-        documentSetService = null;
+        bulkService = null;
     }
 
     @Override
     public void unregisterContribution(Object contribution, String extensionPoint, ComponentInstance contributor) {
         if (CONFIGURATION_XP.equals(extensionPoint)) {
-            documentSetServiceRegistry.remove(contribution);
+            configurationRegistry.remove(contribution);
         } else {
             throw new RuntimeServiceException("Unknown extension point: " + extensionPoint);
         }

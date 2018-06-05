@@ -12,10 +12,10 @@
   </extension>
 
   <extension target="org.nuxeo.ecm.core.bulk" point="configuration">
-    <set>
+    <bulkConfig>
       <logManager>testBulkLog</logManager>
       <kvStore>testBulkKV</kvStore>
-    </set>
+    </bulkConfig>
   </extension>
 
 </component>

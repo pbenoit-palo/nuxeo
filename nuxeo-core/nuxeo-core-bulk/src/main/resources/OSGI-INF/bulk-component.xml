@@ -2,20 +2,24 @@
 <component name="org.nuxeo.ecm.core.bulk" version="1.0.0">
 
   <documentation>
-    The DocumentSet Service allows to prepare document sets to perform bulk operations.
+    The Bulk Service allows to execute a Bulk Command. This consists of two steps:
+    <ul>
+      <li>Creation of a document set by scrolling the database</li>
+      <li>Execution of an Bulk Operation on document set</li>
+    </ul>
   </documentation>
 
   <implementation class="org.nuxeo.ecm.core.bulk.BulkComponent" />
 
   <service>
-    <provide interface="org.nuxeo.ecm.core.bulk.DocumentSetService" />
+    <provide interface="org.nuxeo.ecm.core.bulk.BulkService" />
   </service>
 
   <extension-point name="configuration">
     <documentation>
-      Allows to define the document set service implementation.
+      Allows to define the bulk service implementation.
     </documentation>
-    <object class="org.nuxeo.ecm.core.bulk.DocumentSetServiceDescriptor" />
+    <object class="org.nuxeo.ecm.core.bulk.BulkServiceDescriptor" />
   </extension-point>
 
 </component>

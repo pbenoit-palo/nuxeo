@@ -31,6 +31,9 @@ public class BulkCommand implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /** The username which run the bulk operation. */
+    private String username;
+
     private String repository;
 
     /** The NXQL query to execute. */
@@ -40,6 +43,15 @@ public class BulkCommand implements Serializable {
     private String operation;
 
     public BulkCommand() {
+    }
+
+    public BulkCommand withUsername(String username) {
+        this.username = username;
+        return this;
+    }
+
+    public String getUsername() {
+        return username;
     }
 
     public BulkCommand withRepository(String repository) {

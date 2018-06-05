@@ -33,42 +33,27 @@
  * limitations under the License.
  *
  * Contributors:
- *     Funsho David
+ *     pierre
  */
-
 package org.nuxeo.ecm.core.bulk;
 
-import java.util.UUID;
+import java.io.Serializable;
 
-import org.nuxeo.ecm.core.bulk.BulkStatus;
+import org.nuxeo.common.xmap.annotation.XNode;
+import org.nuxeo.common.xmap.annotation.XObject;
 
 /**
- * API to manage document sets.
- * 
+ * The Bulk Operation Service configuration.
+ *
  * @since 10.2
  */
-public interface DocumentSetService {
+@XObject("bulkConfig")
+public class BulkServiceDescriptor implements Serializable {
 
-    String DOCUMENTSET_LOG_CONFIG_PROP = "nuxeo.stream.documentset.log.config";
+    @XNode("logManager")
+    public String logManager;
 
-    String DEFAULT_DOCUMENTSET_LOG_CONFIG = "documentset";
+    @XNode("kvStore")
+    public String kvStore;
 
-    String DOCUMENTSET_STORE_ID = "documentset";
-
-    /**
-     * Creates a document set from the given NXQL query.
-     *
-     * @param repository the repository
-     * @param nxql the query
-     * @return the newly created document set
-     */
-    BulkStatus createDocumentSet(String repository, String nxql);
-
-    /**
-     * Gets document set from its id.
-     * 
-     * @param documentSetId the document set id
-     * @return the documentSet
-     */
-    BulkStatus getDocumentSet(UUID documentSetId);
 }

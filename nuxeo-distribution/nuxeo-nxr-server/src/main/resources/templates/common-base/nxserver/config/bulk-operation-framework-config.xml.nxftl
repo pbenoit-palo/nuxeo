@@ -1,14 +1,14 @@
 <#escape x as x?xml>
 <?xml version="1.0"?>
-<component name="org.nuxeo.documentset.config">
+<component name="org.nuxeo.bulk.config">
   <require>org.nuxeo.runtime.stream.service</require>
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
   <#if "${kafka.enabled}" == "true">
-    <logConfig name="${nuxeo.stream.documentset.log.config}" type="kafka">
+    <logConfig name="${nuxeo.stream.bulk.log.config}" type="kafka">
       <option name="kafkaConfig">default</option>
     </logConfig>
   <#else>
-    <logConfig name="${nuxeo.stream.documentset.log.config}" type="chronicle">
+    <logConfig name="${nuxeo.stream.bulk.log.config}" type="chronicle">
       <option name="retention">${nuxeo.stream.chronicle.retention.duration}</option>
     </logConfig>
   </#if>
@@ -16,23 +16,23 @@
 
   <#if "${nuxeo.keyvalue.provider}" == "redis">
   <extension target="org.nuxeo.runtime.kv.KeyValueService" point="configuration">
-    <store name="${nuxeo.keyvalue.store.documentset}" class="org.nuxeo.ecm.core.redis.contribs.RedisKeyValueStore">
+    <store name="${nuxeo.keyvalue.store.bulk}" class="org.nuxeo.ecm.core.redis.contribs.RedisKeyValueStore">
       <property name="namespace">kv</property>
     </store>
   </extension>
   <#elseif "${nuxeo.keyvalue.provider}" == "mongodb">
   <extension target="org.nuxeo.runtime.kv.KeyValueService" point="configuration">
-    <store name="${nuxeo.keyvalue.store.documentset}" class="org.nuxeo.ecm.core.mongodb.kv.MongoDBKeyValueStore">
+    <store name="${nuxeo.keyvalue.store.bulk}" class="org.nuxeo.ecm.core.mongodb.kv.MongoDBKeyValueStore">
       <property name="namespace">kv</property>
     </store>
   </extension>
   </#if>
 
   <extension target="org.nuxeo.ecm.core.bulk" target="configuration">
-    <set>
-      <logManager>${nuxeo.stream.documentset.log.config}</logManager>
-      <kvStore>${nuxeo.keyvalue.store.documentset}</kvStore>
-    </set>
+    <bulkConfiguration>
+      <logManager>${nuxeo.stream.bulk.log.config}</logManager>
+      <kvStore>${nuxeo.keyvalue.store.bulk}</kvStore>
+    </bulkConfiguration>
   </extension>
 
 </component>
