@@ -8,14 +8,14 @@
   <implementation class="org.nuxeo.ecm.core.bulk.BulkComponent" />
 
   <service>
-    <provide interface="org.nuxeo.ecm.core.bulk.documentset.DocumentSetService" />
+    <provide interface="org.nuxeo.ecm.core.bulk.DocumentSetService" />
   </service>
 
   <extension-point name="configuration">
     <documentation>
       Allows to define the document set service implementation.
     </documentation>
-    <object class="org.nuxeo.ecm.core.bulk.documentset.DocumentSetServiceDescriptor" />
+    <object class="org.nuxeo.ecm.core.bulk.DocumentSetServiceDescriptor" />
   </extension-point>
 
 </component>

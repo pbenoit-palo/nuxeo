@@ -22,9 +22,6 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 import org.nuxeo.ecm.core.api.NuxeoException;
-import org.nuxeo.ecm.core.bulk.documentset.DocumentSetService;
-import org.nuxeo.ecm.core.bulk.documentset.DocumentSetServiceDescriptor;
-import org.nuxeo.ecm.core.bulk.documentset.DocumentSetServiceImpl;
 import org.nuxeo.runtime.RuntimeServiceException;
 import org.nuxeo.runtime.model.ComponentContext;
 import org.nuxeo.runtime.model.ComponentInstance;

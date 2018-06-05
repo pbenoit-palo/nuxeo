@@ -14,27 +14,21 @@
  * limitations under the License.
  *
  * Contributors:
- *     pierre
+ *       Kevin Leturc <kleturc@nuxeo.com>
  */
-package org.nuxeo.ecm.core.bulk.documentset;
+package org.nuxeo.ecm.core.bulk;
 
-import java.io.Serializable;
-
-import org.nuxeo.common.xmap.annotation.XNode;
-import org.nuxeo.common.xmap.annotation.XObject;
+import java.util.UUID;
 
 /**
- * The Avro schema descriptor.
+ * API to manage Bulk Operations.
  *
  * @since 10.2
  */
-@XObject("set")
-public class DocumentSetServiceDescriptor implements Serializable {
+public interface BulkService {
 
-    @XNode("logManager")
-    public String logManager;
+    BulkStatus runOperation(BulkCommand command);
 
-    @XNode("kvStore")
-    public String kvStore;
+    BulkStatus getStatus(UUID bulkOperationId);
 
 }
