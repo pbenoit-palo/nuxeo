@@ -35,7 +35,8 @@ public class DocumentSetRepositoryInit extends DefaultRepositoryInit {
         super.populate(session);
         DocumentModel test = session.getDocument(new PathRef("/default-domain/workspaces/test"));
         for (int i = 0; i < SIZE; i++) {
-            session.createDocumentModel(test.getPathAsString(), "doc " + i, "ComplexDoc");
+            DocumentModel doc = session.createDocumentModel(test.getPathAsString(), "doc " + i, "ComplexDoc");
+            session.createDocument(doc);
         }
     }
 }

@@ -5,10 +5,8 @@
     <store name="testBulkKV" class="org.nuxeo.runtime.kv.MemKeyValueStore" />
   </extension>
 
-  <extension point="logConfig" target="org.nuxeo.runtime.stream.service">
-    <logConfig name="testBulkLog" type="kafka">
-      <option name="config">default</option>
-    </logConfig>
+  <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
+    <logConfig name="testBulkLog" type="chronicle" />
   </extension>
 
   <extension target="org.nuxeo.ecm.core.bulk" point="configuration">

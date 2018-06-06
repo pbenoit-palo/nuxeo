@@ -18,9 +18,10 @@
  */
 package org.nuxeo.ecm.core.bulk;
 
+import static org.junit.Assert.assertNotNull;
+
 import javax.inject.Inject;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nuxeo.ecm.core.api.CoreSession;
@@ -49,11 +50,12 @@ public class TestBulkService {
     @Test
     public void testCreateDocumentSet() {
         DocumentModel model = session.getDocument(new PathRef("/default-domain/workspaces/test"));
-        String nxql = String.format("SELECT * from Document where ecm:parentId=‘%s’", model.getId());
-        BulkStatus status = service.runOperation(new BulkCommand().withQuery(nxql));
-        Assert.assertNotNull(status);
+        String nxql = String.format("SELECT * from Document where ecm:parentId='%s'", model.getId());
+        // TODO change operation name
+        BulkStatus status = service.runOperation(new BulkCommand().withQuery(nxql).withOperation("count"));
+        assertNotNull(status);
         status = service.getStatus(status.getUUID());
-        Assert.assertNotNull(status);
+        assertNotNull(status);
 
     }
 }
