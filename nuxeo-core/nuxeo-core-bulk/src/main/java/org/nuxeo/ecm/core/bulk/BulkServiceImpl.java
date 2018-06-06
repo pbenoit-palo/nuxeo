@@ -37,13 +37,11 @@
  */
 package org.nuxeo.ecm.core.bulk;
 
-import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.nuxeo.ecm.core.bulk.BulkStatus.State.SCHEDULED;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
@@ -151,16 +149,5 @@ public class BulkServiceImpl implements BulkService {
         } catch (IOException e) {
             throw new NuxeoException("Unable to deserialize the bulk command=" + commandAsString, e);
         }
-    }
-
-    @Override
-    public String getKeyValueStore() {
-        return descriptor.kvStore;
-    }
-
-    @Override
-    public List<String> getOperations() {
-        // TODO change that when doing bulk computation part
-        return singletonList("count");
     }
 }

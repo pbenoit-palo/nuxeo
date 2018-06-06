@@ -170,9 +170,3 @@ nuxeo.stream.audit.batch.threshold.ms=500
 nuxeo.stream.pubsub.log.config=pubsub
 nuxeo.stream.pubsub.log.name=pubsub
 
-# Stream Bulk Operation Framework
-nuxeo.stream.bulk.log.config=bulk
-
-# Key/Value store for Bulk Operation Framework
-nuxeo.keyvalue.store.bulk=bulk
-

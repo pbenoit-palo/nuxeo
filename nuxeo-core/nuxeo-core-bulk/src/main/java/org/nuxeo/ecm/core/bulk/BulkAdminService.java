@@ -18,16 +18,27 @@
  */
 package org.nuxeo.ecm.core.bulk;
 
-import java.util.UUID;
+import java.util.List;
+
+import org.nuxeo.runtime.kv.KeyValueStore;
 
 /**
- * API to manage Bulk Operation Framework.
+ * Bulk admin service, mainly used by stream processors to create topology.
  *
  * @since 10.2
  */
-public interface BulkService {
+public interface BulkAdminService {
 
-    BulkStatus runOperation(BulkCommand command);
+    /**
+     * @return the {@link KeyValueStore} name used by service.
+     */
+    String getKeyValueStore();
 
-    BulkStatus getStatus(UUID bulkOperationId);
+    /**
+     * Return a list of declared Bulk Operations. By design a Bulk Operation listen the stream of its own name.
+     *
+     * @return a list of declared Bulk Operations.
+     */
+    List<String> getOperations();
+
 }

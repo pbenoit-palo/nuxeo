@@ -60,11 +60,11 @@ public class StreamBulkScroller implements StreamProcessorTopology {
 
     private static final Log log = LogFactory.getLog(StreamBulkScroller.class);
 
-    public static final String COMPUTATION_NAME = "BulkDocumentScroller";
+    public static final String COMPUTATION_NAME = "bulkDocumentScroller";
 
     public static final String SCROLL_BATCH_SIZE_OPT = "scrollBatchSize";
 
-    public static final String SCROLL_KEEPALIVE_SECONDS_OPT = "scrollKeepAlive";
+    public static final String SCROLL_KEEP_ALIVE_SECONDS_OPT = "scrollKeepAlive";
 
     public static final int DEFAULT_SCROLL_BATCH_SIZE = 100;
 
@@ -74,10 +74,10 @@ public class StreamBulkScroller implements StreamProcessorTopology {
     public Topology getTopology(Map<String, String> options) {
         // retrieve options
         int scrollBatchSize = getOptionAsInteger(options, SCROLL_BATCH_SIZE_OPT, DEFAULT_SCROLL_BATCH_SIZE);
-        int scrollKeepAliveSeconds = getOptionAsInteger(options, SCROLL_KEEPALIVE_SECONDS_OPT,
+        int scrollKeepAliveSeconds = getOptionAsInteger(options, SCROLL_KEEP_ALIVE_SECONDS_OPT,
                 DEFAULT_SCROLL_KEEPALIVE_SECONDS);
         // retrieve bulk operations to deduce output streams
-        BulkService service = Framework.getService(BulkService.class);
+        BulkAdminService service = Framework.getService(BulkAdminService.class);
         String kvStore = service.getKeyValueStore();
         List<String> operations = service.getOperations();
         List<String> mapping = new ArrayList<>();
@@ -113,6 +113,10 @@ public class StreamBulkScroller implements StreamProcessorTopology {
 
         @Override
         public void processRecord(ComputationContext context, String inputStreamName, Record record) {
+            TransactionHelper.runInTransaction(() -> processRecord(context, record));
+        }
+
+        protected void processRecord(ComputationContext context, Record record) {
             try {
                 BulkCommand command = getBulkCommandJson(record.data);
                 if (!kvStore.compareAndSet(record.key + STATE, SCHEDULED.toString(), BUILDING.toString())) {

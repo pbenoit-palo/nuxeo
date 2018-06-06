@@ -13,6 +13,7 @@
 
   <service>
     <provide interface="org.nuxeo.ecm.core.bulk.BulkService" />
+    <provide interface="org.nuxeo.ecm.core.bulk.BulkAdminService" />
   </service>
 
   <extension-point name="configuration">

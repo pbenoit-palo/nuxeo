@@ -4,11 +4,11 @@
   <require>org.nuxeo.runtime.stream.service</require>
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
   <#if "${kafka.enabled}" == "true">
-    <logConfig name="${nuxeo.stream.bulk.log.config}" type="kafka">
+    <logConfig name="bulk" type="kafka">
       <option name="kafkaConfig">default</option>
     </logConfig>
   <#else>
-    <logConfig name="${nuxeo.stream.bulk.log.config}" type="chronicle">
+    <logConfig name="bulk" type="chronicle">
       <option name="retention">${nuxeo.stream.chronicle.retention.duration}</option>
     </logConfig>
   </#if>
@@ -16,24 +16,17 @@
 
   <#if "${nuxeo.keyvalue.provider}" == "redis">
   <extension target="org.nuxeo.runtime.kv.KeyValueService" point="configuration">
-    <store name="${nuxeo.keyvalue.store.bulk}" class="org.nuxeo.ecm.core.redis.contribs.RedisKeyValueStore">
+    <store name="bulk" class="org.nuxeo.ecm.core.redis.contribs.RedisKeyValueStore">
       <property name="namespace">kv</property>
     </store>
   </extension>
   <#elseif "${nuxeo.keyvalue.provider}" == "mongodb">
   <extension target="org.nuxeo.runtime.kv.KeyValueService" point="configuration">
-    <store name="${nuxeo.keyvalue.store.bulk}" class="org.nuxeo.ecm.core.mongodb.kv.MongoDBKeyValueStore">
+    <store name="bulk" class="org.nuxeo.ecm.core.mongodb.kv.MongoDBKeyValueStore">
       <property name="namespace">kv</property>
     </store>
   </extension>
   </#if>
-
-  <extension target="org.nuxeo.ecm.core.bulk" target="configuration">
-    <bulkConfiguration>
-      <logManager>${nuxeo.stream.bulk.log.config}</logManager>
-      <kvStore>${nuxeo.keyvalue.store.bulk}</kvStore>
-    </bulkConfiguration>
-  </extension>
 
 </component>
 </#escape>
