@@ -7,7 +7,6 @@
 
   <extension target="org.nuxeo.runtime.stream.service" point="logConfig">
     <logConfig name="bulk" type="chronicle">
-      <log name="bulk"/>
       <log name="output" size="1"/>
     </logConfig>
   </extension>
