@@ -38,7 +38,7 @@ import org.nuxeo.runtime.test.runner.FeaturesRunner;
 @Deploy("org.nuxeo.ecm.core.test.tests:OSGI-INF/test-repo-core-types-contrib.xml")
 @Deploy("org.nuxeo.ecm.core.test.tests:OSGI-INF/bulk-contrib-tests.xml")
 @RepositoryConfig(init = DocumentSetRepositoryInit.class)
-public class TestDocumentSetService {
+public class TestBulkService {
 
     @Inject
     public BulkService service;
