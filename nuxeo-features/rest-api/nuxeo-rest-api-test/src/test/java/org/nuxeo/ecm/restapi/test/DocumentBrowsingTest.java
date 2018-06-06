@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.nuxeo.ecm.core.io.marshallers.json.document.DocumentModelJsonWriter.ENTITY_TYPE;
+import static org.nuxeo.ecm.core.io.registry.MarshallingConstants.EMBED_PROPERTIES;
 import static org.nuxeo.ecm.core.io.registry.MarshallingConstants.FETCH_PROPERTIES;
 import static org.nuxeo.ecm.core.io.registry.MarshallingConstants.HEADER_PREFIX;
 
@@ -39,6 +40,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nuxeo.ecm.collections.api.CollectionConstants;
 import org.nuxeo.ecm.collections.api.CollectionManager;
 import org.nuxeo.ecm.collections.api.FavoritesManager;
 import org.nuxeo.ecm.collections.core.io.CollectionsJsonEnricher;
@@ -640,6 +642,49 @@ public class DocumentBrowsingTest extends BaseTest {
             JsonNode node = mapper.readTree(response.getEntityInputStream());
             ArrayNode collections = (ArrayNode) node.get(RestConstants.CONTRIBUTOR_CTX_PARAMETERS)
                                                     .get(CollectionsJsonEnricher.NAME);
+            assertEquals(1, collections.size());
+            assertEquals("dummyCollection", collections.get(0).get("title").textValue());
+        }
+    }
+
+    /**
+     * @since 10.2
+     */
+    @Test
+    public void iCanFetchTheCollectionsOfADocument() throws Exception {
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(HEADER_PREFIX + FETCH_PROPERTIES + "." + ENTITY_TYPE, CollectionConstants.COLLECTION_MEMBER_SCHEMA_NAME);
+        headers.put(EMBED_PROPERTIES, CollectionConstants.COLLECTION_MEMBER_SCHEMA_NAME);
+
+        DocumentModel note = RestServerInit.getNote(0, session);
+
+        try (CloseableClientResponse response = getResponse(RequestType.GET,
+                "repo/" + note.getRepositoryName() + "/path" + note.getPathAsString(), headers)) {
+
+            // The above GET will force the creation of the user workspace if it did not exist yet.
+            // Force to refresh current transaction context.
+            TransactionHelper.commitOrRollbackTransaction();
+            TransactionHelper.startTransaction();
+
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            JsonNode node = mapper.readTree(response.getEntityInputStream());
+            assertFalse(node.get("properties").has(CollectionConstants.COLLECTION_MEMBER_SCHEMA_NAME));
+        }
+
+        CollectionManager collectionManager = Framework.getService(CollectionManager.class);
+        collectionManager.addToNewCollection("dummyCollection", null, note, session);
+
+        TransactionHelper.commitOrRollbackTransaction();
+        TransactionHelper.startTransaction();
+
+        try (CloseableClientResponse response = getResponse(RequestType.GET,
+                "repo/" + note.getRepositoryName() + "/path" + note.getPathAsString(), headers)) {
+
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            JsonNode node = mapper.readTree(response.getEntityInputStream());
+            ArrayNode collections = (ArrayNode) node.get("properties")
+                                                    .get(CollectionConstants.DOCUMENT_COLLECTION_IDS_PROPERTY_NAME);
             assertEquals(1, collections.size());
             assertEquals("dummyCollection", collections.get(0).get("title").textValue());
         }
