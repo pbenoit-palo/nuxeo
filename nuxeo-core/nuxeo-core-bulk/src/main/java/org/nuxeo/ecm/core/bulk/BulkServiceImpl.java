@@ -41,6 +41,7 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.nuxeo.ecm.core.bulk.BulkStatus.State.SCHEDULED;
 
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -49,6 +50,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nuxeo.ecm.core.api.NuxeoException;
 import org.nuxeo.ecm.core.api.repository.RepositoryManager;
+import org.nuxeo.ecm.core.bulk.BulkStatus.State;
 import org.nuxeo.lib.stream.computation.Record;
 import org.nuxeo.lib.stream.log.LogManager;
 import org.nuxeo.runtime.api.Framework;
@@ -68,17 +70,17 @@ public class BulkServiceImpl implements BulkService {
 
     private static final Log log = LogFactory.getLog(BulkServiceImpl.class);
 
+    protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     protected static final String SET_STREAM_NAME = "documentSet";
 
-    protected final static String REPOSITORY = ":repository";
+    protected static final String COMMAND = ":command";
 
-    protected final static String QUERY = ":query";
+    protected static final String CREATION_DATE = ":creationDate";
 
-    protected final static String CREATION_DATE = ":creationDate";
+    protected static final String STATE = ":state";
 
-    protected final static String STATE = ":state";
-
-    protected final static String SCROLLED_DOCUMENT_COUNT = ":scrolledDocumentCount";
+    protected static final String SCROLLED_DOCUMENT_COUNT = ":scrolledDocumentCount";
 
     protected BulkServiceDescriptor descriptor;
 
@@ -111,17 +113,17 @@ public class BulkServiceImpl implements BulkService {
         status.setCreationDate(ZonedDateTime.now());
         status.setCommand(command);
 
-        // store the bulk command and status in the key/value store
-        kvStore.put(bulkOperationId + STATE, status.getState().toString());
-        kvStore.put(bulkOperationId + CREATION_DATE, status.getCreationDate().toString());
-        kvStore.put(bulkOperationId + REPOSITORY, command.getRepository());
-        kvStore.put(bulkOperationId + QUERY, command.getQuery());
-
         try {
+            byte[] commandAsBytes = OBJECT_MAPPER.writeValueAsBytes(command);
+
+            // store the bulk command and status in the key/value store
+            kvStore.put(bulkOperationId + STATE, status.getState().toString());
+            kvStore.put(bulkOperationId + CREATION_DATE, status.getCreationDate().toString());
+            kvStore.put(bulkOperationId + COMMAND, commandAsBytes);
+
             // send it to nuxeo-stream
             String key = bulkOperationId.toString();
-            byte[] value = new ObjectMapper().writeValueAsBytes(command);
-            logManager.getAppender(SET_STREAM_NAME).append(key, new Record(key, value));
+            logManager.getAppender(SET_STREAM_NAME).append(key, new Record(key, commandAsBytes));
         } catch (JsonProcessingException e) {
             throw new NuxeoException("Unable to serialize the bulk command=" + command, e);
         }
@@ -130,7 +132,25 @@ public class BulkServiceImpl implements BulkService {
 
     @Override
     public BulkStatus getStatus(UUID bulkOperationId) {
-        return null;
+        String commandAsString = "";
+        try {
+            BulkStatus status = new BulkStatus();
+            status.setUUID(bulkOperationId);
+            // retrieve values from KeyValueStore
+            String state = kvStore.getString(bulkOperationId + STATE);
+            status.setState(State.valueOf(state));
+
+            String creationDate = kvStore.getString(bulkOperationId + CREATION_DATE);
+            status.setCreationDate(ZonedDateTime.parse(creationDate));
+
+            commandAsString = kvStore.getString(bulkOperationId + COMMAND);
+            BulkCommand command = OBJECT_MAPPER.readValue(commandAsString, BulkCommand.class);
+            status.setCommand(command);
+
+            return status;
+        } catch (IOException e) {
+            throw new NuxeoException("Unable to deserialize the bulk command=" + commandAsString, e);
+        }
     }
 
     @Override
